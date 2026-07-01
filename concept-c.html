@@ -1,0 +1,1104 @@
+<!--
+  ============================================================================
+  HYPNOSIS DANCE ACADEMY — Homepage ideation prototype
+  CONCEPT C · "The Departures Board"
+  ----------------------------------------------------------------------------
+  The signage-led, conversion-forward sibling. Leads with MTA-style station
+  signage and a live "Vertrektijden / Departures" board (split-flap aesthetic,
+  pure CSS/JS). Editorial, utilitarian-chic, fast, legible.
+  Self-contained: inline <style> + <script>, inline SVG only. No external
+  libraries, CDNs, fonts, or images. Dutch (Flemish) copy; tagline stays EN.
+  Craft-5 redesign ideation — NOT production.
+  ============================================================================
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypnosis Dance Academy — Get your talent on track!</title>
+<meta name="description" content="Concept C · The Departures Board — dansschool Roeselare als NYC-metronetwerk voor talent.">
+
+<style>
+  /* =========================================================================
+     TOKENS
+     ========================================================================= */
+  :root {
+    --ink: #1a1a1c;
+    --paper: #f4f4f4;
+    --white: #ffffff;
+    --hair: #cfcfcf;
+
+    /* Line palette (real Hypnosis colours) */
+    --l-urban:  #fdd630;  /* yellow — BLACK text */
+    --l-disco:  #943f90;
+    --l-modern: #374b9a;
+    --l-jazz:   #00933c;
+    --l-ballet: #ec6427;
+    --l-clip:   #c73f90;
+    --l-gdans:  #70b747;
+    --l-tricks: #996633;
+    --l-kleuter:#a7a9ab;  /* gray — BLACK text */
+    --l-fitness:#e73730;
+    --l-musical:#00add0;
+
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    --maxw: 1180px;
+    --gutter: clamp(1.1rem, 4vw, 3rem);
+    --board-bg: #0c0c0d;   /* deep board black, slightly off pure */
+    --flap-face: #171718;
+    --flap-edge: #060607;
+  }
+
+  /* =========================================================================
+     RESET / BASE
+     ========================================================================= */
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.02em; line-height: 1.02; }
+  p { margin: 0; }
+  a { color: inherit; }
+  img, svg { max-width: 100%; display: block; }
+  ul { margin: 0; padding: 0; list-style: none; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
+
+  /* Skip link */
+  .skip {
+    position: absolute; left: -999px; top: 0; z-index: 200;
+    background: var(--ink); color: var(--white); padding: .7rem 1rem;
+    text-transform: uppercase; letter-spacing: .04em; font-size: .8rem;
+  }
+  .skip:focus { left: .6rem; top: .6rem; }
+
+  /* Focus states */
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid var(--l-urban);
+    outline-offset: 2px;
+  }
+
+  /* =========================================================================
+     LINE BULLET (core atom)
+     ========================================================================= */
+  .bullet {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; color: var(--white);
+    font-weight: 600; letter-spacing: 0;
+    width: 2.25rem; height: 2.25rem; font-size: 1.35rem;
+    flex: 0 0 auto; line-height: 1;
+    font-family: var(--sans);
+  }
+  .bullet > span { transform: translateY(-3%); } /* optical centering */
+  .bullet.sm { width: 1.5rem; height: 1.5rem; font-size: .9rem; }
+  .bullet.lg { width: 3.5rem; height: 3.5rem; font-size: 2.1rem; }
+  .bullet.dark { color: var(--ink); } /* yellow + gray */
+
+  .b-urban  { background: var(--l-urban); color: var(--ink); }
+  .b-disco  { background: var(--l-disco); }
+  .b-modern { background: var(--l-modern); }
+  .b-jazz   { background: var(--l-jazz); }
+  .b-ballet { background: var(--l-ballet); }
+  .b-clip   { background: var(--l-clip); }
+  .b-gdans  { background: var(--l-gdans); }
+  .b-tricks { background: var(--l-tricks); }
+  .b-kleuter{ background: var(--l-kleuter); color: var(--ink); }
+  .b-fitness{ background: var(--l-fitness); }
+  .b-musical{ background: var(--l-musical); }
+
+  /* =========================================================================
+     CONCEPT TAG (fixed corner)
+     ========================================================================= */
+  .concept-tag {
+    position: fixed; z-index: 150; right: .7rem; bottom: .7rem;
+    background: var(--ink); color: var(--white);
+    font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: .45rem .6rem; border: 1px solid #333;
+    display: flex; align-items: center; gap: .4rem;
+    max-width: 70vw;
+  }
+  .concept-tag .dot {
+    width: .55rem; height: .55rem; border-radius: 50%;
+    background: var(--l-urban); flex: 0 0 auto;
+  }
+
+  /* =========================================================================
+     HEADER / NAV (signage strip)
+     ========================================================================= */
+  header.site {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--ink); color: var(--white);
+    border-bottom: 1px solid #000;
+  }
+  .site .bar {
+    display: flex; align-items: center; gap: 1rem;
+    height: 58px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: .6rem;
+    text-decoration: none; color: var(--white);
+    font-weight: 700; text-transform: uppercase;
+    letter-spacing: -0.01em; font-size: 1rem; white-space: nowrap;
+  }
+  .brand .mark {
+    width: 1.7rem; height: 1.7rem; border-radius: 50%;
+    background: var(--l-urban); color: var(--ink);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700;
+  }
+  .brand .mark span { transform: translateY(-4%); }
+  .brand small { display:block; font-size:.55rem; letter-spacing:.14em; font-weight:400; opacity:.65; }
+  .nav-links { margin-left: auto; display: flex; gap: 1.4rem; align-items: center; }
+  .nav-links a {
+    text-decoration: none; color: var(--white);
+    text-transform: uppercase; font-size: .74rem; letter-spacing: .07em;
+    opacity: .8;
+  }
+  .nav-links a:hover { opacity: 1; }
+  .nav-cta {
+    background: var(--l-urban); color: var(--ink) !important;
+    padding: .5rem .8rem; opacity: 1 !important; font-weight: 600;
+    display: inline-flex; align-items: center; gap: .4rem;
+  }
+  .nav-cta .arw { font-weight: 700; }
+  @media (max-width: 860px) {
+    .nav-links a:not(.nav-cta) { display: none; }
+  }
+
+  /* =========================================================================
+     STATION-SIGN PLATE (shared component)
+     ========================================================================= */
+  .plate {
+    background: var(--ink); color: var(--white);
+    border-top: 3px solid var(--white); /* ghost of the black stripe */
+    padding: 1.4rem clamp(1.1rem, 4vw, 2.2rem);
+  }
+  .plate .eyebrow {
+    text-transform: uppercase; letter-spacing: .16em;
+    font-size: .68rem; opacity: .6; margin-bottom: .5rem;
+  }
+  .plate h2 {
+    text-transform: uppercase;
+    font-size: clamp(1.5rem, 4.4vw, 2.7rem);
+    letter-spacing: -0.03em;
+  }
+  .plate .plate-bullets { display: flex; gap: .4rem; margin-top: .9rem; flex-wrap: wrap; }
+
+  /* Section rhythm */
+  section { padding: clamp(3rem, 8vw, 6rem) 0; }
+  section.tight { padding: clamp(2rem, 5vw, 3.5rem) 0; }
+  .section-head { margin-bottom: 2rem; }
+
+  /* =========================================================================
+     HERO
+     ========================================================================= */
+  .hero { background: var(--paper); padding-top: clamp(1.6rem, 4vw, 2.6rem); padding-bottom: clamp(2.4rem, 6vw, 4rem); }
+  .hero-sign {
+    background: var(--ink); color: var(--white);
+    border-top: 4px solid var(--white); /* thin white top rule */
+    padding: clamp(1.6rem, 5vw, 3.2rem) clamp(1.3rem, 5vw, 3.2rem);
+    position: relative;
+  }
+  .hero-sign .dir {
+    text-transform: uppercase; letter-spacing: .16em; font-size: .72rem;
+    opacity: .6; display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem;
+  }
+  .hero-sign h1 {
+    text-transform: uppercase;
+    font-size: clamp(2.75rem, 8.5vw, 7.2rem);
+    letter-spacing: -0.035em; line-height: .95;
+    max-width: 16ch;
+  }
+  .hero-sign .payoff { color: var(--l-urban); display: block; }
+  .hero-sub {
+    margin-top: 1.4rem; max-width: 46ch; font-size: clamp(1rem, 1.6vw, 1.15rem);
+    opacity: .9; line-height: 1.5;
+  }
+  .hero-bullets { display: flex; gap: .45rem; margin-top: 1.6rem; flex-wrap: wrap; }
+  .hero-ctas { display: flex; gap: .7rem; margin-top: 1.9rem; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .55rem;
+    padding: .85rem 1.2rem; text-decoration: none;
+    text-transform: uppercase; letter-spacing: .04em; font-weight: 600;
+    font-size: .84rem; border: 2px solid transparent;
+  }
+  .btn .arw { font-weight: 700; font-size: 1em; }
+  .btn-primary { background: var(--l-urban); color: var(--ink); }
+  .btn-primary:hover { background: #ffe14d; }
+  .btn-ghost { background: transparent; color: var(--white); border-color: #444; }
+  .btn-ghost:hover { border-color: var(--white); }
+  .btn-dark { background: var(--ink); color: var(--white); }
+  .btn-dark:hover { background: #000; }
+
+  .hero-meta {
+    margin-top: 1.6rem; display: flex; gap: 1.4rem; flex-wrap: wrap;
+    font-size: .74rem; text-transform: uppercase; letter-spacing: .07em; opacity: .55;
+  }
+
+  /* =========================================================================
+     DEPARTURES BOARD (centrepiece)
+     ========================================================================= */
+  .board-outer { background: var(--paper); }
+  .board {
+    background: var(--board-bg);
+    border: 1px solid #000;
+    color: #f2f2ef;
+    box-shadow: inset 0 0 0 6px #000, 0 20px 40px -30px rgba(0,0,0,.6);
+    overflow: hidden;
+  }
+  .board-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem clamp(1rem, 3vw, 1.6rem);
+    border-bottom: 1px solid #000;
+    background: #050506;
+  }
+  .board-top .ttl {
+    text-transform: uppercase; letter-spacing: .04em;
+    font-size: clamp(1rem, 2.6vw, 1.4rem); font-weight: 700; color: #fff;
+    display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+  }
+  .board-top .ttl small { font-size: .6rem; letter-spacing: .16em; opacity: .55; font-weight: 400; }
+  .board-clock {
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(1rem, 2.6vw, 1.4rem); font-weight: 700; color: var(--l-urban);
+    letter-spacing: .02em;
+  }
+
+  .board-rooms { display: grid; grid-template-columns: 1fr; }
+  .room { border-top: 1px solid #1c1c1e; }
+  .room:first-child { border-top: 0; }
+  .room-head {
+    display: flex; align-items: center; gap: .7rem;
+    padding: .8rem clamp(1rem, 3vw, 1.6rem);
+    background: #101012;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .room-head .rm { font-weight: 700; font-size: .95rem; color: #fff; }
+  .room-head .rm small { display:block; font-size:.56rem; letter-spacing:.12em; opacity:.5; font-weight:400; }
+  .room-head .platform {
+    margin-left: auto; font-size: .6rem; letter-spacing: .14em; opacity: .5;
+    border: 1px solid #2a2a2d; padding: .25rem .5rem;
+  }
+
+  /* column labels */
+  .board-cols {
+    display: grid;
+    grid-template-columns: 2rem 1fr 5.5rem 4.2rem;
+    gap: .6rem; align-items: center;
+    padding: .4rem clamp(1rem, 3vw, 1.6rem);
+    font-size: .56rem; text-transform: uppercase; letter-spacing: .14em;
+    color: #6a6a6e; border-top: 1px dashed #1c1c1e;
+  }
+
+  .departures { padding: .2rem 0 .7rem; }
+  .dep-row {
+    display: grid;
+    grid-template-columns: 2rem 1fr 5.5rem 4.2rem;
+    gap: .6rem; align-items: center;
+    padding: .5rem clamp(1rem, 3vw, 1.6rem);
+  }
+  .dep-row .cls { display: flex; flex-direction: column; }
+  .dep-row .cls .name { font-weight: 600; color: #f2f2ef; letter-spacing: -.01em; }
+  .dep-row .cls .meta { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: #8a8a8e; margin-top: .12rem; }
+  .dep-row .type {
+    font-size: .58rem; letter-spacing: .12em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: .35rem; color: #b9b9bd;
+  }
+  .dep-row .type .glyph { color: var(--l-urban); font-size: .9rem; line-height: 1; }
+
+  /* split-flap status cell */
+  .flap {
+    justify-self: end;
+    display: inline-flex; gap: 2px; align-items: center;
+  }
+  .flap .cell {
+    background: linear-gradient(#202022 0 50%, #141416 50% 100%);
+    color: #f7f7f2; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    width: 1.05ch; min-width: .95rem; text-align: center;
+    padding: .28rem .05rem; font-size: .95rem; line-height: 1;
+    border-radius: 2px;
+    position: relative;
+    box-shadow: 0 1px 0 #000;
+    letter-spacing: 0;
+  }
+  .flap .cell::after { /* hinge line */
+    content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    height: 1px; background: rgba(0,0,0,.6);
+  }
+  .flap.now .cell { color: var(--l-urban); }
+  .flap.now { animation: nowpulse 2.6s ease-in-out infinite; }
+  @keyframes nowpulse { 0%,100% { opacity: 1; } 50% { opacity: .72; } }
+
+  .board-foot {
+    padding: .8rem clamp(1rem, 3vw, 1.6rem);
+    border-top: 1px solid #000; background: #050506;
+    font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
+    color: #6a6a6e; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  }
+  .board-caption {
+    margin-top: .8rem; font-size: .72rem; color: #555; letter-spacing: .04em;
+  }
+
+  @media (max-width: 620px) {
+    .board-cols { grid-template-columns: 1.6rem 1fr 4.2rem; }
+    .board-cols .col-type { display: none; }
+    .dep-row { grid-template-columns: 1.6rem 1fr 4.2rem; }
+    .dep-row .type { display: none; }
+  }
+
+  /* =========================================================================
+     PLAN JE ROUTE (filters) + LINE INDEX
+     ========================================================================= */
+  .filters {
+    display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+    margin-bottom: 1.6rem;
+  }
+  .filters .fl-label {
+    font-size: .66rem; text-transform: uppercase; letter-spacing: .12em;
+    opacity: .55; margin-right: .3rem;
+  }
+  .chip {
+    border: 1px solid var(--ink); background: var(--white);
+    padding: .45rem .8rem; font-size: .74rem; text-transform: uppercase;
+    letter-spacing: .04em; cursor: pointer; font-family: var(--sans);
+    color: var(--ink);
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+  .chip:hover { background: var(--ink); color: var(--white); }
+
+  .line-grid {
+    display: grid; gap: .7rem;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  .line-card {
+    display: flex; align-items: center; gap: .8rem;
+    background: var(--white); border: 1px solid var(--hair);
+    padding: .8rem .9rem; text-decoration: none; color: var(--ink);
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .line-card:hover { transform: translateX(3px); border-color: var(--ink); }
+  .line-card .lc-txt { display: flex; flex-direction: column; min-width: 0; }
+  .line-card .lc-name { font-weight: 600; text-transform: uppercase; letter-spacing: -.01em; }
+  .line-card .lc-sub { font-size: .64rem; text-transform: uppercase; letter-spacing: .1em; opacity: .55; margin-top: .1rem; }
+  .line-card .lc-arw { margin-left: auto; font-weight: 700; opacity: .35; }
+  .line-card:hover .lc-arw { opacity: 1; }
+
+  /* =========================================================================
+     FUN vs CHALLENGE (Local / Express)
+     ========================================================================= */
+  .two-track { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 720px) { .two-track { grid-template-columns: 1fr; } }
+  .track {
+    border: 2px solid var(--ink); background: var(--white); padding: 1.6rem;
+    display: flex; flex-direction: column;
+  }
+  .track .stop-mark { margin-bottom: 1rem; }
+  .track h3 {
+    text-transform: uppercase; font-size: 1.5rem; letter-spacing: -.02em;
+    display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+  }
+  .track h3 .en { font-size: .7rem; letter-spacing: .14em; opacity: .5; }
+  .track p { margin-top: .8rem; opacity: .82; }
+  .track ul.svc { margin-top: 1rem; display: flex; flex-direction: column; gap: .4rem; }
+  .track ul.svc li { font-size: .84rem; display: flex; gap: .5rem; align-items: flex-start; }
+  .track ul.svc li::before { content: "→"; font-weight: 700; }
+  .track.express { background: var(--ink); color: var(--white); border-color: var(--ink); }
+  .track.express p { opacity: .8; }
+
+  /* =========================================================================
+     BASECAMP
+     ========================================================================= */
+  .basecamp { background: var(--ink); color: var(--white); }
+  .basecamp .plate { border-top-color: var(--l-urban); }
+  .rooms-grid { display: grid; gap: 1rem; grid-template-columns: repeat(3, 1fr); margin-top: 2rem; }
+  @media (max-width: 820px) { .rooms-grid { grid-template-columns: 1fr; } }
+  .room-card { border: 1px solid #333; background: #111113; overflow: hidden; }
+  .room-photo {
+    height: 150px; position: relative; overflow: hidden;
+    background: #1c1c1f;
+  }
+  .room-photo svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .room-photo .cap {
+    position: absolute; left: .6rem; bottom: .5rem;
+    font-size: .58rem; letter-spacing: .08em; text-transform: uppercase;
+    color: #9a9a9e; background: rgba(0,0,0,.5); padding: .2rem .4rem;
+  }
+  .room-card .rc-body { padding: 1.1rem; }
+  .room-card h3 { text-transform: uppercase; font-size: 1.2rem; display:flex; align-items:center; gap:.5rem; }
+  .room-card p { margin-top: .6rem; font-size: .84rem; opacity: .78; }
+  .facil {
+    margin-top: 2rem; display: flex; gap: .5rem; flex-wrap: wrap;
+  }
+  .facil .f {
+    border: 1px solid #333; padding: .4rem .7rem; font-size: .72rem;
+    text-transform: uppercase; letter-spacing: .05em; opacity: .85;
+  }
+  .harbour-note {
+    margin-top: 2rem; border-left: 4px solid var(--l-musical);
+    padding: .3rem 0 .3rem 1.2rem; max-width: 54ch;
+  }
+  .harbour-note p { font-size: clamp(1.05rem, 2.2vw, 1.4rem); line-height: 1.35; }
+  .harbour-note cite { display:block; margin-top:.7rem; font-style: normal; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; opacity:.5; }
+
+  /* =========================================================================
+     BEWIJS (proof / stats)
+     ========================================================================= */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hair); border: 1px solid var(--hair); }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--paper); padding: 1.6rem 1.2rem; }
+  .stat .n { font-size: clamp(2rem, 6vw, 3.4rem); font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .stat .lab { margin-top: .5rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; opacity: .6; }
+  .proof-quote {
+    margin-top: 2rem; font-size: clamp(1.2rem, 3vw, 1.9rem);
+    font-weight: 600; letter-spacing: -.02em; max-width: 22ch; line-height: 1.15;
+  }
+  .proof-refs { margin-top: 1.6rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+  .proof-refs .r {
+    border: 1px solid var(--ink); padding: .4rem .7rem; font-size: .72rem;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .medals { margin-top: 1.4rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+  .medal {
+    display: flex; align-items: center; gap: .5rem;
+    background: var(--ink); color: var(--white); padding: .5rem .8rem;
+    font-size: .74rem; text-transform: uppercase; letter-spacing: .05em;
+  }
+  .medal .dot { width:.6rem;height:.6rem;border-radius:50%; }
+
+  /* =========================================================================
+     IEDEREEN HOORT ERBIJ
+     ========================================================================= */
+  .inclusion { background: var(--white); }
+  .incl-grid { display: grid; gap: 1.6rem; grid-template-columns: 1.1fr .9fr; align-items: center; }
+  @media (max-width: 780px) { .incl-grid { grid-template-columns: 1fr; } }
+  .incl-copy h2 { text-transform: uppercase; font-size: clamp(1.8rem, 5vw, 3rem); letter-spacing: -.03em; }
+  .incl-copy p { margin-top: 1.1rem; max-width: 44ch; font-size: 1.05rem; opacity: .85; }
+  .incl-copy .lead { font-size: clamp(1.15rem, 2.4vw, 1.5rem); font-weight: 600; opacity: 1; }
+  .incl-photo { border: 2px solid var(--ink); position: relative; min-height: 260px; overflow: hidden; }
+  .incl-photo svg { position:absolute; inset:0; width:100%; height:100%; }
+  .incl-photo .cap {
+    position: absolute; left: .7rem; bottom: .6rem; background: var(--ink); color: var(--white);
+    font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; padding: .25rem .5rem;
+  }
+
+  /* =========================================================================
+     BIG CTA
+     ========================================================================= */
+  .cta-final { background: var(--l-urban); color: var(--ink); }
+  .cta-final h2 { text-transform: uppercase; font-size: clamp(2rem, 7vw, 5rem); letter-spacing: -.04em; line-height: .95; }
+  .cta-final .sub { margin-top: 1.2rem; font-size: clamp(1rem, 2vw, 1.3rem); max-width: 40ch; font-weight: 500; }
+  .cta-final .ctas { margin-top: 2rem; display: flex; gap: .7rem; flex-wrap: wrap; }
+  .cta-final .info { margin-top: 2rem; display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
+  .cta-final .info b { font-weight: 700; }
+
+  /* =========================================================================
+     FOOTER (signage)
+     ========================================================================= */
+  footer.site {
+    background: var(--ink); color: var(--white);
+    border-top: 4px solid var(--white);
+    padding: clamp(2.5rem, 6vw, 4rem) 0 5rem;
+  }
+  .foot-grid { display: grid; gap: 2rem; grid-template-columns: 1.3fr 1fr 1fr; }
+  @media (max-width: 760px) { .foot-grid { grid-template-columns: 1fr; } }
+  .foot-brand { display: flex; align-items: center; gap: .7rem; font-weight: 700; text-transform: uppercase; font-size: 1.3rem; }
+  .foot-col h4 { text-transform: uppercase; font-size: .72rem; letter-spacing: .12em; opacity: .5; margin-bottom: .9rem; font-weight: 500; }
+  .foot-col a, .foot-col p { color: var(--white); text-decoration: none; opacity: .85; font-size: .88rem; display: block; margin-bottom: .5rem; }
+  .foot-col a:hover { opacity: 1; text-decoration: underline; }
+  .foot-tags { margin-top: 2.5rem; display: flex; gap: 1rem; flex-wrap: wrap; font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; opacity: .5; }
+  .foot-legal { margin-top: 2rem; font-size: .68rem; opacity: .4; letter-spacing: .04em; }
+
+  /* =========================================================================
+     REVEAL (scroll) — respects reduced motion below
+     ========================================================================= */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .55s ease, transform .55s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+    .flap.now { opacity: 1 !important; }
+  }
+</style>
+
+<a class="skip" href="#board">Direct naar de vertrektijden</a>
+
+<!-- =========================================================================
+     HEADER
+     ========================================================================= -->
+<header class="site">
+  <div class="wrap bar">
+    <a class="brand" href="#top" aria-label="Hypnosis Dance Academy — home">
+      <span class="mark"><span>H</span></span>
+      <span>Hypnosis<small>Dance Academy · Roeselare</small></span>
+    </a>
+    <nav class="nav-links" aria-label="Hoofdnavigatie">
+      <a href="#board">Vertrektijden</a>
+      <a href="#lijnen">Vind jouw lijn</a>
+      <a href="#basecamp">BASECAMP</a>
+      <a href="#bewijs">Bewijs</a>
+      <a class="nav-cta" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arw">→</span></a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- =====================================================================
+       HERO — MTA station sign
+       ===================================================================== -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div class="hero-sign">
+        <p class="dir"><span aria-hidden="true">→</span> Talentontwikkeling · Lijn H · Richting podium &amp; thuis</p>
+        <h1 id="hero-title">
+          Get your<br>talent<br>
+          <span class="payoff">on track!</span>
+        </h1>
+        <p class="hero-sub">
+          Van kleuter tot volwassene. Recreatief tot internationaal wedstrijdniveau.
+          Eén netwerk, jouw route. Stap in in Roeselare.
+        </p>
+
+        <div class="hero-bullets" aria-label="Onze dansstijlen als metrolijnen">
+          <span class="bullet b-urban"  role="img" aria-label="Lijn U — Urban"><span>U</span></span>
+          <span class="bullet b-disco"  role="img" aria-label="Lijn D — Disco"><span>D</span></span>
+          <span class="bullet b-modern" role="img" aria-label="Lijn M — Modern"><span>M</span></span>
+          <span class="bullet b-jazz"   role="img" aria-label="Lijn J — Jazz"><span>J</span></span>
+          <span class="bullet b-ballet" role="img" aria-label="Lijn B — Ballet"><span>B</span></span>
+          <span class="bullet b-clip"   role="img" aria-label="Lijn C — Clipdance"><span>C</span></span>
+          <span class="bullet b-gdans"  role="img" aria-label="Lijn G — G-Dans"><span>G</span></span>
+          <span class="bullet b-musical" role="img" aria-label="Lijn Mu — Musical"><span>Mu</span></span>
+        </div>
+
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arw" aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="#board">Gratis proefles · 7–12 sept 2026 <span class="arw" aria-hidden="true">→</span></a>
+        </div>
+
+        <div class="hero-meta">
+          <span>~1000 dansers</span>
+          <span>28 lessen / seizoen</span>
+          <span>Max 28 per cursus</span>
+          <span>Seizoen 2026–2027 · start MA 7 sept</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       DEPARTURES BOARD — centrepiece
+       ===================================================================== -->
+  <section id="board" class="board-outer" aria-labelledby="board-title">
+    <div class="wrap">
+      <div class="board reveal">
+        <div class="board-top">
+          <div class="ttl" id="board-title">
+            Vertrektijden <small>Departures · BASECAMP</small>
+          </div>
+          <div class="board-clock" id="clock" aria-hidden="true">--:--</div>
+        </div>
+
+        <!-- accessible summary of the board's illustrative purpose -->
+        <p class="visually-hidden" style="position:absolute;left:-9999px">
+          Illustratief lesrooster per zaal. NU = les die nu bezig is, STRAKS = volgende les.
+        </p>
+
+        <div class="board-rooms" id="rooms" aria-live="polite">
+          <!-- rooms injected by JS; static fallback rendered too -->
+        </div>
+
+        <div class="board-foot">
+          <span>NU = les bezig · STRAKS = volgende vertrek</span>
+          <span>Illustratief rooster — echte tijden volgen</span>
+        </div>
+      </div>
+      <p class="board-caption">
+        Een voorproefje van het live now/next-bord — later ook op de schermen in de lobby.
+      </p>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       VIND JOUW LIJN — line index + plan je route
+       ===================================================================== -->
+  <section id="lijnen" aria-labelledby="lijnen-title">
+    <div class="wrap">
+      <div class="plate section-head reveal">
+        <p class="eyebrow">Discovery</p>
+        <h2 id="lijnen-title">Vind jouw lijn</h2>
+        <div class="plate-bullets" aria-hidden="true">
+          <span class="bullet sm b-urban"><span>U</span></span>
+          <span class="bullet sm b-disco"><span>D</span></span>
+          <span class="bullet sm b-jazz"><span>J</span></span>
+          <span class="bullet sm b-ballet"><span>B</span></span>
+        </div>
+      </div>
+
+      <form class="filters" aria-label="Plan je route" onsubmit="return false">
+        <span class="fl-label">Plan je route:</span>
+        <button type="button" class="chip" aria-pressed="true" data-group="stijl">Alle stijlen</button>
+        <button type="button" class="chip" aria-pressed="false" data-group="leeftijd">Leeftijd</button>
+        <button type="button" class="chip" aria-pressed="false" data-group="niveau">Niveau: Fun</button>
+        <button type="button" class="chip" aria-pressed="false" data-group="niveau">Niveau: Challenge</button>
+      </form>
+
+      <ul class="line-grid" id="line-grid" aria-label="Alle dansstijlen (lijnen)"></ul>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       FUN vs CHALLENGE — Local / Express
+       ===================================================================== -->
+  <section class="tight" aria-labelledby="tempo-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 id="tempo-title" style="text-transform:uppercase;font-size:clamp(1.6rem,4.5vw,2.6rem);letter-spacing:-.03em">Jij kiest je tempo</h2>
+        <p style="margin-top:.6rem;opacity:.7;max-width:46ch">Fun of Challenge — wij zijn de grondlegger. Twee sporen, één netwerk. Local stopt overal, Express gaat voor de titel.</p>
+      </div>
+      <div class="two-track reveal">
+        <div class="track local">
+          <div class="stop-mark" aria-hidden="true">
+            <!-- Local stop = circle -->
+            <svg width="42" height="42" viewBox="0 0 42 42" role="img" aria-label="Local stop">
+              <circle cx="21" cy="21" r="13" fill="#fff" stroke="#1a1a1c" stroke-width="6"/>
+            </svg>
+          </div>
+          <h3>Fun <span class="en">Local</span></h3>
+          <p>Plezier, ontspanning en vriendschap. Dansen in kleine groepen, in je eigen tempo — zonder druk.</p>
+          <ul class="svc">
+            <li>Recreatieve lessen voor elke leeftijd</li>
+            <li>Sociaal, warm, laagdrempelig</li>
+            <li>Van kleuterdans tot fitness voor volwassenen</li>
+          </ul>
+        </div>
+        <div class="track express">
+          <div class="stop-mark" aria-hidden="true">
+            <!-- Express stop = diamond -->
+            <svg width="42" height="42" viewBox="0 0 42 42" role="img" aria-label="Express stop">
+              <rect x="21" y="4" width="24" height="24" transform="rotate(45 21 4)" fill="#fff" stroke="#fdd630" stroke-width="5"/>
+            </svg>
+          </div>
+          <h3>Challenge <span class="en">Express</span></h3>
+          <p>Techniek, ambitie en groei. Kies uit 17 wedstrijdteams en ga voor de titel — tot op internationaal niveau.</p>
+          <ul class="svc">
+            <li>17 wedstrijdteams · Disco, Hiphop, Modern</li>
+            <li>Star Entertainer — pre-professioneel</li>
+            <li>De Dansacademie · MSKA Roeselare</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       BASECAMP
+       ===================================================================== -->
+  <section id="basecamp" class="basecamp" aria-labelledby="bc-title">
+    <div class="wrap">
+      <div class="plate reveal" style="background:#101012">
+        <p class="eyebrow">Home of the hypno's</p>
+        <h2 id="bc-title">BASECAMP</h2>
+        <div class="plate-bullets" aria-hidden="true">
+          <span class="bullet sm b-musical"><span>Mu</span></span>
+          <span class="bullet sm b-modern"><span>M</span></span>
+        </div>
+      </div>
+
+      <p style="margin-top:1.4rem;max-width:52ch;opacity:.85">
+        Groenestraat 170B. Het eerste CO₂-neutrale danscenter van België: zwevende dansvloeren,
+        klimaatcontrole en drie zalen waar het netwerk samenkomt. De veilige plek waar jouw route begint.
+      </p>
+
+      <div class="rooms-grid reveal">
+        <article class="room-card">
+          <div class="room-photo">
+            <svg viewBox="0 0 300 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs><pattern id="p1" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="16" stroke="#2a2a2f" stroke-width="6"/></pattern></defs>
+              <rect width="300" height="150" fill="#161619"/><rect width="300" height="150" fill="url(#p1)"/>
+            </svg>
+            <span class="cap">foto — Broadway</span>
+          </div>
+          <div class="rc-body">
+            <h3><span class="bullet sm b-ballet" aria-hidden="true"><span>B</span></span> Broadway</h3>
+            <p>De grootste zaal. Volledige lichtinstallatie en 360° geluid — waar shows ontstaan.</p>
+          </div>
+        </article>
+        <article class="room-card">
+          <div class="room-photo">
+            <svg viewBox="0 0 300 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs><pattern id="p2" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="16" stroke="#2a2a2f" stroke-width="6"/></pattern></defs>
+              <rect width="300" height="150" fill="#161619"/><rect width="300" height="150" fill="url(#p2)"/>
+            </svg>
+            <span class="cap">foto — The Bronx</span>
+          </div>
+          <div class="rc-body">
+            <h3><span class="bullet sm b-urban" aria-hidden="true"><span>U</span></span> The Bronx</h3>
+            <p>Urban &amp; hiphop. Rauw, ritmisch, energiek — het hart van de crew.</p>
+          </div>
+        </article>
+        <article class="room-card">
+          <div class="room-photo">
+            <svg viewBox="0 0 300 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs><pattern id="p3" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="16" stroke="#2a2a2f" stroke-width="6"/></pattern></defs>
+              <rect width="300" height="150" fill="#161619"/><rect width="300" height="150" fill="url(#p3)"/>
+            </svg>
+            <span class="cap">foto — Manhattan</span>
+          </div>
+          <div class="rc-body">
+            <h3><span class="bullet sm b-modern" aria-hidden="true"><span>M</span></span> Manhattan</h3>
+            <p>Klassiek &amp; ballet, met barres. Rust, lijn en techniek.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="facil" aria-label="Faciliteiten">
+        <span class="f">Central Park · bar, 90+ plaatsen</span>
+        <span class="f">Fifth Avenue · kledingshop</span>
+        <span class="f">The Printing House · fitness</span>
+        <span class="f">Columbia · studeerlounge</span>
+        <span class="f">Kleedkamers &amp; douches</span>
+        <span class="f">Lockers</span>
+        <span class="f">Privé-parking</span>
+        <span class="f">Warme maaltijden</span>
+      </div>
+
+      <div class="harbour-note reveal">
+        <p>"Wij zijn die vuurtoren in tijden van storm. De safe haven voor velen."</p>
+        <cite>— Home of the hypno's</cite>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       BEWIJS
+       ===================================================================== -->
+  <section id="bewijs" aria-labelledby="bewijs-title">
+    <div class="wrap">
+      <div class="plate section-head reveal">
+        <p class="eyebrow">Bewijs</p>
+        <h2 id="bewijs-title">Hier groeit talent</h2>
+      </div>
+
+      <div class="stats reveal">
+        <div class="stat"><div class="n">~1000</div><div class="lab">Dansers</div></div>
+        <div class="stat"><div class="n">11</div><div class="lab">Jaar ervaring</div></div>
+        <div class="stat"><div class="n">30+</div><div class="lab">Docenten</div></div>
+        <div class="stat"><div class="n">17</div><div class="lab">Wedstrijdteams</div></div>
+      </div>
+
+      <p class="proof-quote reveal">Hier groeit niet alleen een sterke danser, maar ook een sterk persoon.</p>
+
+      <div class="medals reveal" aria-label="Titels">
+        <span class="medal"><span class="dot" style="background:var(--l-disco)"></span>Wereldkampioen Disco 2025</span>
+        <span class="medal"><span class="dot" style="background:var(--l-disco)"></span>Europees kampioen Disco 2025</span>
+        <span class="medal"><span class="dot" style="background:var(--l-urban)"></span>Vice-EK Hiphop 2026</span>
+        <span class="medal"><span class="dot" style="background:var(--l-jazz)"></span>Jeugdsportploeg van het jaar 2025</span>
+      </div>
+
+      <div class="proof-refs reveal" aria-label="Podium en referenties">
+        <span class="r">#LikeMe</span>
+        <span class="r">Bellewaerde shows</span>
+        <span class="r">Belgium's Got Talent</span>
+        <span class="r">The Greatest Dancer</span>
+        <span class="r">Kerstparades BE &amp; FR</span>
+        <span class="r">Rode Neuzendag VTM</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       IEDEREEN HOORT ERBIJ
+       ===================================================================== -->
+  <section class="inclusion" aria-labelledby="incl-title">
+    <div class="wrap">
+      <div class="incl-grid">
+        <div class="incl-copy reveal">
+          <h2 id="incl-title">Iedereen hoort erbij</h2>
+          <p class="lead">Niet iedereen hoeft op een podium te staan om een echte danser te zijn.</p>
+          <p>Met <b>Magic &amp; Rising Stars</b> dansen mensen met een beperking — o.a. met het syndroom van Down. Enige in de regio. Bij Hypnosis geloven we dat dans voor iedereen moet zijn.</p>
+          <p>Home of the hypno's. Hier ontstaan vriendschappen voor het leven.</p>
+        </div>
+        <div class="incl-photo reveal">
+          <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect width="400" height="300" fill="#f4f4f4"/>
+            <!-- interchange capsule motif -->
+            <rect x="60" y="130" width="280" height="44" rx="22" fill="#fff" stroke="#1a1a1c" stroke-width="6"/>
+            <circle cx="104" cy="152" r="20" fill="#943f90"/>
+            <circle cx="164" cy="152" r="20" fill="#00add0"/>
+            <circle cx="224" cy="152" r="20" fill="#70b747"/>
+            <circle cx="284" cy="152" r="20" fill="#ec6427"/>
+          </svg>
+          <span class="cap">foto — Magic &amp; Rising Stars</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       FINAL CTA
+       ===================================================================== -->
+  <section class="cta-final" aria-labelledby="cta-title">
+    <div class="wrap">
+      <h2 id="cta-title">Stap in.<br>Get your talent on track!</h2>
+      <p class="sub">Schrijf je in voor seizoen 2026–2027, of kom gratis proeven tijdens de proeflessenweek.</p>
+      <div class="ctas">
+        <a class="btn btn-dark" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arw" aria-hidden="true">→</span></a>
+        <a class="btn btn-dark" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Gratis proefles reserveren <span class="arw" aria-hidden="true">→</span></a>
+      </div>
+      <div class="info">
+        <span><b>Proeflessenweek:</b> 7–12 sept 2026</span>
+        <span><b>Start seizoen:</b> MA 7 sept 2026</span>
+        <span><b>BASECAMP:</b> Groenestraat 170B, Roeselare</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- =========================================================================
+     FOOTER
+     ========================================================================= -->
+<footer class="site" aria-labelledby="foot-title">
+  <div class="wrap">
+    <h2 id="foot-title" class="foot-brand">
+      <span class="bullet b-urban" aria-hidden="true"><span>H</span></span> Hypnosis Dance Academy
+    </h2>
+    <div class="foot-grid" style="margin-top:2rem">
+      <div class="foot-col">
+        <h4>Het netwerk</h4>
+        <a href="#board">Vertrektijden</a>
+        <a href="#lijnen">Vind jouw lijn</a>
+        <a href="#basecamp">BASECAMP</a>
+        <a href="#bewijs">Bewijs</a>
+        <a href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven →</a>
+      </div>
+      <div class="foot-col">
+        <h4>Contact</h4>
+        <a href="mailto:info@hdac.be">info@hdac.be</a>
+        <a href="tel:+32486414404">0486 414 404</a>
+        <p>Broeder Adolfsstraat 3<br>8800 Roeselare</p>
+        <p>Danscenter: Groenestraat 170B</p>
+      </div>
+      <div class="foot-col">
+        <h4>Volg de lijn</h4>
+        <a href="#">Facebook</a>
+        <a href="#">Instagram</a>
+        <a href="#">TikTok</a>
+        <a href="#">YouTube</a>
+      </div>
+    </div>
+    <div class="foot-tags">
+      <span>#homeofthehypnos</span>
+      <span>#TheOnlyWayIsUp</span>
+    </div>
+    <p class="foot-legal">Get your talent on track! · Dansschool Roeselare, sinds 2015 · Wortels als hiphopcrew sinds 2004.</p>
+  </div>
+</footer>
+
+<div class="concept-tag" role="note" aria-label="Concept C">
+  <span class="dot"></span> Concept C · The Departures Board
+</div>
+
+<script>
+  /* =========================================================================
+     DATA — line network + illustrative schedule
+     ========================================================================= */
+  var LINES = [
+    { letter:"U",  name:"Urban",       cls:"b-urban",   sub:"Local · Express" },
+    { letter:"D",  name:"Disco",       cls:"b-disco",   sub:"Express · Wereldkampioen" },
+    { letter:"M",  name:"Modern",      cls:"b-modern",  sub:"Local · Express" },
+    { letter:"J",  name:"Jazz",        cls:"b-jazz",    sub:"Local" },
+    { letter:"B",  name:"Ballet",      cls:"b-ballet",  sub:"Local · Manhattan" },
+    { letter:"C",  name:"Clipdance",   cls:"b-clip",    sub:"Local" },
+    { letter:"G",  name:"G-Dans",      cls:"b-gdans",   sub:"Local" },
+    { letter:"T",  name:"Tricks",      cls:"b-tricks",  sub:"Express" },
+    { letter:"K",  name:"Kleuterdans", cls:"b-kleuter", sub:"Local · vanaf 3 jaar" },
+    { letter:"F",  name:"Fitness",     cls:"b-fitness", sub:"Volwassenen · beurtenkaart" },
+    { letter:"Mu", name:"Musical",     cls:"b-musical", sub:"Local" },
+    /* branch stops for realism */
+    { letter:"H",  name:"Heels",       cls:"b-clip",    sub:"Local" },
+    { letter:"Br", name:"Breakdance",  cls:"b-urban",   sub:"Express" },
+    { letter:"Cm", name:"Commercial",  cls:"b-disco",   sub:"Local" },
+    { letter:"Ko", name:"Koppeldans",  cls:"b-jazz",    sub:"Local · duo" },
+    { letter:"La", name:"Latin",       cls:"b-fitness", sub:"Local" },
+    { letter:"Pa", name:"Paaldansen",  cls:"b-modern",  sub:"Volwassenen" },
+    { letter:"St", name:"Stretching",  cls:"b-gdans",   sub:"Local · mobiliteit" }
+  ];
+
+  /* Illustrative departures per room. type: local(●) / express(◆) */
+  var ROOMS = [
+    { room:"Broadway", plat:"Zaal 1", now:{ letter:"D", cls:"b-disco",  name:"Disco Challenge", meta:"Wedstrijdteam · 10–14 j", type:"express" },
+      next:{ letter:"Mu", cls:"b-musical", name:"Musical", meta:"Local · 8–12 j", type:"local", t:"18:30" } },
+    { room:"The Bronx", plat:"Zaal 2", now:{ letter:"U", cls:"b-urban",  name:"Urban", meta:"Local · 12–16 j", type:"local" },
+      next:{ letter:"Br", cls:"b-urban", name:"Breakdance Express", meta:"Wedstrijd · 14+", type:"express", t:"19:15" } },
+    { room:"Manhattan", plat:"Zaal 3", now:{ letter:"B", cls:"b-ballet", name:"Ballet", meta:"Local · 9–12 j", type:"local" },
+      next:{ letter:"M", cls:"b-modern", name:"Modern Challenge", meta:"Wedstrijdteam · 13+", type:"express", t:"18:45" } }
+  ];
+
+  /* =========================================================================
+     LINE INDEX
+     ========================================================================= */
+  (function buildLines(){
+    var grid = document.getElementById("line-grid");
+    if(!grid) return;
+    var html = "";
+    for (var i=0;i<LINES.length;i++){
+      var l = LINES[i];
+      html +=
+        '<li><a class="line-card" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">' +
+          '<span class="bullet ' + l.cls + '" aria-hidden="true"><span>' + l.letter + '</span></span>' +
+          '<span class="lc-txt">' +
+            '<span class="lc-name">' + l.name + '</span>' +
+            '<span class="lc-sub">' + l.sub + '</span>' +
+          '</span>' +
+          '<span class="lc-arw" aria-hidden="true">&rarr;</span>' +
+        '</a></li>';
+    }
+    grid.innerHTML = html;
+  })();
+
+  /* Filter chips — ideation UI (visual toggle only) */
+  (function chips(){
+    var els = document.querySelectorAll(".chip[data-group]");
+    els.forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var group = btn.getAttribute("data-group");
+        if (group === "niveau" || group === "stijl") {
+          document.querySelectorAll('.chip[data-group="'+group+'"]').forEach(function(o){
+            o.setAttribute("aria-pressed","false");
+          });
+        }
+        var on = btn.getAttribute("aria-pressed") === "true";
+        btn.setAttribute("aria-pressed", on ? "false" : "true");
+      });
+    });
+  })();
+
+  /* =========================================================================
+     DEPARTURES BOARD — split-flap render + tick
+     ========================================================================= */
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function typeGlyph(type){ return type === "express" ? "◆" : "●"; } /* ◆ / ● */
+  function typeLabel(type){ return type === "express" ? "Express" : "Local"; }
+
+  function flapCells(text, isNow){
+    var cls = "flap" + (isNow ? " now" : "");
+    var lab = isNow ? "NU" : "STRAKS";
+    var html = '<span class="' + cls + '" role="img" aria-label="' + lab + ' — ' + text + '">';
+    for (var i=0;i<text.length;i++){
+      var ch = text.charAt(i) === " " ? " " : text.charAt(i);
+      html += '<span class="cell" data-final="' + ch + '">' + (reduce ? ch : " ") + '</span>';
+    }
+    html += '</span>';
+    return html;
+  }
+
+  function depRow(dep, isNow){
+    var status = isNow ? "NU" : (dep.t || "STRAKS");
+    return '' +
+      '<div class="dep-row">' +
+        '<span class="bullet sm ' + dep.cls + '" aria-hidden="true"><span>' + dep.letter + '</span></span>' +
+        '<span class="cls"><span class="name">' + dep.name + '</span><span class="meta">' + dep.meta + '</span></span>' +
+        '<span class="type"><span class="glyph" aria-hidden="true">' + typeGlyph(dep.type) + '</span>' + typeLabel(dep.type) + '</span>' +
+        flapCells(status, isNow) +
+      '</div>';
+  }
+
+  (function buildBoard(){
+    var mount = document.getElementById("rooms");
+    if(!mount) return;
+    var html = "";
+    for (var r=0;r<ROOMS.length;r++){
+      var rm = ROOMS[r];
+      html +=
+        '<div class="room">' +
+          '<div class="room-head">' +
+            '<span class="rm">' + rm.room + '<small>Zaal</small></span>' +
+            '<span class="platform">' + rm.plat + '</span>' +
+          '</div>' +
+          '<div class="board-cols" aria-hidden="true">' +
+            '<span></span><span>Les</span><span class="col-type">Spoor</span><span style="text-align:right">Status</span>' +
+          '</div>' +
+          '<div class="departures">' +
+            depRow(rm.now, true) +
+            depRow(rm.next, false) +
+          '</div>' +
+        '</div>';
+    }
+    mount.innerHTML = html;
+  })();
+
+  /* Split-flap tick animation on load (skipped when reduced motion) */
+  function tickFlaps(){
+    if (reduce) return;
+    var CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:";
+    var cells = document.querySelectorAll(".flap .cell");
+    cells.forEach(function(cell, idx){
+      var finalCh = cell.getAttribute("data-final");
+      var steps = 6 + (idx % 5);          /* how many flaps */
+      var i = 0;
+      var startDelay = 120 + idx * 55;    /* stagger left→right */
+      setTimeout(function(){
+        var iv = setInterval(function(){
+          i++;
+          if (i >= steps){
+            cell.textContent = finalCh;
+            clearInterval(iv);
+          } else {
+            cell.textContent = CHARS.charAt(Math.floor(Math.random()*CHARS.length));
+          }
+        }, 45);
+      }, startDelay);
+    });
+  }
+
+  /* =========================================================================
+     LIVE CLOCK (illustrative)
+     ========================================================================= */
+  (function clock(){
+    var el = document.getElementById("clock");
+    if(!el) return;
+    function pad(n){ return (n<10?"0":"")+n; }
+    function tick(){
+      var d = new Date();
+      el.textContent = pad(d.getHours()) + ":" + pad(d.getMinutes());
+    }
+    tick();
+    if (!reduce) setInterval(tick, 15000);
+  })();
+
+  /* =========================================================================
+     SCROLL REVEAL + board animation trigger
+     ========================================================================= */
+  (function reveal(){
+    var items = document.querySelectorAll(".reveal");
+    if (reduce || !("IntersectionObserver" in window)){
+      items.forEach(function(el){ el.classList.add("in"); });
+      tickFlaps();
+      return;
+    }
+    var boardDone = false;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          e.target.classList.add("in");
+          if (e.target.classList.contains("board") && !boardDone){
+            boardDone = true;
+            tickFlaps();
+          }
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.18, rootMargin: "0px 0px -8% 0px" });
+    items.forEach(function(el){ io.observe(el); });
+  })();
+</script>

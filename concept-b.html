@@ -1,0 +1,1019 @@
+<!--
+  ==========================================================================
+  HYPNOSIS DANCE ACADEMY — HOMEPAGE IDEATION PROTOTYPE
+  Concept B · "Ride the Line"
+  --------------------------------------------------------------------------
+  The cinematic, story-first sibling. A single vertical subway line runs down
+  the whole page as inline SVG and DRAWS ITSELF as you scroll. Each homepage
+  section is a STATION you arrive at; the story rides the line top to bottom.
+  Two metaphors braided: subway journey (structure/growth) + harbour/home
+  (belonging/safe haven). Apple-style scrollytelling, Vignelli discipline.
+
+  Self-contained: inline CSS + JS + SVG only. No external libs/CDNs/fonts/
+  images. Vanilla JS: rAF-throttled scroll -> stroke-dashoffset draw, plus
+  IntersectionObserver for station reveals. prefers-reduced-motion honoured
+  (full line drawn, all stations present, no scroll-scrubbing).
+  ==========================================================================
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypnosis Dance Academy — Get your talent on track!</title>
+<meta name="description" content="Concept B · Ride the Line — ideation prototype voor de homepage van Hypnosis Dance Academy, Roeselare.">
+
+<style>
+  /* =======================================================================
+     TOKENS
+     ===================================================================== */
+  :root{
+    --ink:#1a1a1c;
+    --paper:#f4f4f4;
+    --white:#ffffff;
+    --hair:#d9d9d9;
+    --ink-soft:#5a5a5e;
+
+    /* line palette (real Hypnosis colours) */
+    --urban:#fdd630;   /* yellow  — BLACK glyph */
+    --disco:#943f90;   /* purple  */
+    --modern:#374b9a;  /* blue    */
+    --jazz:#00933c;    /* green   */
+    --ballet:#ec6427;  /* orange  */
+    --clip:#c73f90;    /* fuchsia */
+    --gdans:#70b747;   /* emerald */
+    --tricks:#996633;  /* brown   */
+    --kleuter:#a7a9ab; /* gray    — BLACK glyph */
+    --fitness:#e73730; /* red     */
+    --musical:#00add0; /* cyan    */
+
+    --font:"Helvetica Neue",Helvetica,Arial,sans-serif;
+
+    --gutter:clamp(1.15rem,5vw,4.5rem);
+    --rail-x:2.35rem;      /* line x on mobile (left edge) */
+    --rail-x-lg:8.5vw;     /* line x on desktop */
+    --station-r:9;         /* svg radius base */
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  html,body{margin:0;max-width:100%;overflow-x:hidden}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font);
+    font-weight:400;
+    line-height:1.5;
+    letter-spacing:-0.01em;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  img{max-width:100%}
+  a{color:inherit}
+
+  /* accessible focus */
+  a:focus-visible,button:focus-visible{
+    outline:3px solid var(--modern);
+    outline-offset:3px;
+  }
+  .skip{
+    position:absolute;left:-9999px;top:0;z-index:200;
+    background:var(--ink);color:var(--white);padding:.75rem 1rem;
+    text-transform:uppercase;letter-spacing:.06em;font-weight:600;
+    font-size:.8rem;text-decoration:none;
+  }
+  .skip:focus{left:.5rem;top:.5rem}
+
+  /* =======================================================================
+     CONCEPT TAG (fixed corner)
+     ===================================================================== */
+  .concept-tag{
+    position:fixed;right:.6rem;bottom:.6rem;z-index:120;
+    background:var(--ink);color:var(--white);
+    font-size:.62rem;font-weight:600;letter-spacing:.12em;
+    text-transform:uppercase;padding:.4rem .6rem;
+    pointer-events:none;
+  }
+  .concept-tag b{color:var(--urban);font-weight:600}
+
+  /* =======================================================================
+     LINE BULLET (core atom)
+     ===================================================================== */
+  .bullet{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:2.25rem;height:2.25rem;border-radius:50%;
+    color:var(--white);font-weight:500;line-height:1;
+    letter-spacing:0;font-size:1.35rem; /* ~0.6 x diameter */
+    flex:0 0 auto;text-transform:uppercase;
+    font-variant-numeric:tabular-nums;
+  }
+  .bullet span{transform:translateY(-3%)} /* optical centering */
+  .bullet--sm{width:1.5rem;height:1.5rem;font-size:.9rem}
+  .bullet--lg{width:3.5rem;height:3.5rem;font-size:2.1rem}
+  .bullet--u,.bullet--k{color:var(--ink)}       /* black glyph */
+  .bullet--u{background:var(--urban)}
+  .bullet--d{background:var(--disco)}
+  .bullet--m{background:var(--modern)}
+  .bullet--j{background:var(--jazz)}
+  .bullet--b{background:var(--ballet)}
+  .bullet--c{background:var(--clip)}
+  .bullet--g{background:var(--gdans)}
+  .bullet--t{background:var(--tricks)}
+  .bullet--k{background:var(--kleuter)}
+  .bullet--f{background:var(--fitness)}
+  .bullet--mu{background:var(--musical);font-size:1rem}
+
+  /* =======================================================================
+     LAYOUT — the rail + content column
+     ===================================================================== */
+  .arrow{font-weight:600}
+
+  /* The persistent SVG rail sits fixed behind everything, drawn by scroll */
+  .rail{
+    position:fixed;top:0;left:0;width:100%;height:100vh;height:100dvh;
+    z-index:0;pointer-events:none;
+  }
+  .rail svg{width:100%;height:100%;display:block}
+
+  /* full-height drawing line lives in a tall absolute layer (not fixed) so
+     the path length maps to document height; we also keep a fixed decorative
+     hairline so there's always ink+paper structure. */
+  .railline{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    z-index:0;pointer-events:none;
+  }
+  .railline svg{position:absolute;inset:0;width:100%;height:100%}
+
+  /* the moving "you are here" train node — fixed, tracks scroll */
+  .train{
+    position:fixed;z-index:60;pointer-events:none;
+    left:var(--rail-x);top:50%;
+    width:22px;height:22px;margin:-11px 0 0 -11px;
+    transition:opacity .4s ease;
+  }
+  .train svg{display:block;width:100%;height:100%}
+
+  /* progress read-out chip near the train */
+  .train-chip{
+    position:fixed;z-index:60;left:calc(var(--rail-x) + 20px);
+    top:50%;transform:translateY(-50%);
+    background:var(--ink);color:var(--white);
+    font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
+    font-weight:600;padding:.25rem .45rem;white-space:nowrap;
+    pointer-events:none;transition:opacity .4s ease;
+    max-width:52vw;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* content wrapper — leaves room for the rail on the left */
+  main{position:relative;z-index:2}
+  .wrap{
+    padding-left:calc(var(--rail-x) + 1.4rem);
+    padding-right:var(--gutter);
+    max-width:none;
+  }
+
+  /* a "station" = one narrative beat */
+  .station{
+    position:relative;
+    padding:clamp(4.5rem,13vh,10rem) 0;
+    min-height:60vh;
+  }
+  .station__meta{
+    display:flex;align-items:center;gap:.7rem;
+    margin:0 0 1.4rem;
+  }
+  .station__kicker{
+    font-size:.7rem;font-weight:600;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-soft);
+  }
+  .station__no{
+    font-size:.7rem;font-weight:600;letter-spacing:.14em;
+    color:var(--ink-soft);
+  }
+
+  /* the station marker that animates on the rail as you arrive */
+  .marker{
+    position:absolute;left:calc(-1 * (1.4rem));top:calc(clamp(4.5rem,13vh,10rem) - .35rem);
+    transform:translateX(-50%);
+    width:34px;height:34px;
+    display:grid;place-items:center;
+    opacity:0;scale:.4;
+    transition:opacity .55s ease, scale .55s cubic-bezier(.16,.84,.44,1);
+  }
+  .station.is-here .marker{opacity:1;scale:1}
+  /* marker glyphs */
+  .marker svg{overflow:visible;width:100%;height:100%}
+
+  /* headings */
+  h1,h2,h3{
+    text-transform:uppercase;font-weight:600;
+    letter-spacing:-0.03em;line-height:.98;margin:0;
+  }
+  .display{
+    font-size:clamp(2.75rem,8vw,8rem);
+    font-weight:700;letter-spacing:-0.04em;line-height:.92;
+  }
+  h2.title{font-size:clamp(1.9rem,5.2vw,4rem);letter-spacing:-0.035em}
+  h3{font-size:clamp(1.15rem,2.4vw,1.7rem);letter-spacing:-0.02em}
+  .lede{
+    font-size:clamp(1.05rem,2.3vw,1.5rem);
+    line-height:1.4;max-width:34ch;font-weight:400;
+    letter-spacing:-0.015em;margin:1.2rem 0 0;color:var(--ink);
+  }
+  p.body{max-width:52ch;margin:1rem 0 0;color:var(--ink)}
+  .muted{color:var(--ink-soft)}
+
+  /* reveal-on-scroll utility */
+  .rise{opacity:0;transform:translateY(26px);
+    transition:opacity .7s ease, transform .7s cubic-bezier(.16,.84,.44,1)}
+  .is-here .rise{opacity:1;transform:none}
+  .is-here .rise.d1{transition-delay:.08s}
+  .is-here .rise.d2{transition-delay:.16s}
+  .is-here .rise.d3{transition-delay:.24s}
+  .is-here .rise.d4{transition-delay:.32s}
+
+  /* signage plate — black station sign */
+  .plate{
+    display:inline-flex;align-items:center;gap:.7rem;
+    background:var(--ink);color:var(--white);
+    padding:.55rem .9rem;
+    font-weight:600;text-transform:uppercase;letter-spacing:.02em;
+    font-size:clamp(.95rem,2vw,1.3rem);
+  }
+
+  /* buttons / CTAs */
+  .btn{
+    display:inline-flex;align-items:center;gap:.55rem;
+    text-decoration:none;font-weight:600;text-transform:uppercase;
+    letter-spacing:.04em;font-size:.9rem;
+    padding:.85rem 1.15rem;border:2px solid var(--ink);
+    background:var(--ink);color:var(--white);
+    transition:transform .18s ease, background .18s ease, color .18s ease;
+  }
+  .btn:hover{transform:translateX(3px)}
+  .btn--ghost{background:transparent;color:var(--ink)}
+  .btn--ghost:hover{background:var(--ink);color:var(--white)}
+  .btn--yellow{background:var(--urban);border-color:var(--urban);color:var(--ink)}
+  .btn--yellow:hover{background:var(--ink);border-color:var(--ink);color:var(--white)}
+  .cta-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.8rem}
+
+  /* photo placeholder panels */
+  .photo{
+    position:relative;overflow:hidden;background:var(--ink);
+    color:var(--white);border:none;
+  }
+  .photo--paper{background:var(--white);color:var(--ink);border:1px solid var(--hair)}
+  .photo .cap{
+    position:absolute;left:0;bottom:0;
+    font-size:.62rem;letter-spacing:.08em;text-transform:lowercase;
+    padding:.4rem .55rem;background:rgba(26,26,28,.82);color:#fff;
+  }
+  .photo--paper .cap{background:var(--ink);color:#fff}
+  .photo__tex{position:absolute;inset:0;opacity:.5}
+  .ratio-4-3{aspect-ratio:4/3}
+  .ratio-3-4{aspect-ratio:3/4}
+  .ratio-16-9{aspect-ratio:16/9}
+  .ratio-1-1{aspect-ratio:1/1}
+
+  /* grids */
+  .grid{display:grid;gap:1.1rem}
+  @media(min-width:720px){
+    .grid-2{grid-template-columns:1fr 1fr}
+    .grid-3{grid-template-columns:repeat(3,1fr)}
+  }
+
+  /* fun vs challenge switch */
+  .tracks{display:grid;gap:1.1rem;margin-top:2rem}
+  @media(min-width:760px){.tracks{grid-template-columns:1fr 1fr}}
+  .track{
+    border:2px solid var(--ink);padding:1.5rem 1.4rem;background:var(--white);
+    display:flex;flex-direction:column;gap:.9rem;
+  }
+  .track h3{display:flex;align-items:center;gap:.7rem}
+  .track .stop{
+    display:flex;align-items:center;gap:.6rem;
+    font-size:.85rem;color:var(--ink-soft);
+  }
+  .stopdot{width:14px;height:14px;flex:0 0 auto}
+  .track ul{margin:.2rem 0 0;padding:0;list-style:none;display:grid;gap:.5rem}
+  .track li{display:flex;gap:.55rem;align-items:baseline;font-size:.95rem}
+  .track li::before{content:"—";color:var(--ink-soft)}
+
+  /* line index */
+  .index{
+    display:grid;gap:.55rem;margin-top:1.8rem;
+    grid-template-columns:1fr;
+  }
+  @media(min-width:560px){.index{grid-template-columns:1fr 1fr}}
+  @media(min-width:980px){.index{grid-template-columns:1fr 1fr 1fr}}
+  .line{
+    display:flex;align-items:center;gap:.75rem;
+    background:var(--white);border:1px solid var(--hair);
+    padding:.6rem .75rem;text-decoration:none;
+    transition:transform .16s ease, border-color .16s ease;
+  }
+  .line:hover{transform:translateX(4px);border-color:var(--ink)}
+  .line__name{font-weight:600;text-transform:uppercase;letter-spacing:-.01em;
+    font-size:.95rem;flex:1}
+  .line__arr{opacity:.35;font-weight:600}
+  .line:hover .line__arr{opacity:1}
+  .roster{margin-top:1.1rem;font-size:.82rem;color:var(--ink-soft);max-width:60ch}
+
+  /* basecamp / zalen */
+  .zaal{display:flex;flex-direction:column;gap:.75rem}
+  .zaal .photo{width:100%}
+  .zaal h3{display:flex;align-items:center;gap:.6rem}
+  .zaal p{margin:0;font-size:.9rem;color:var(--ink-soft);max-width:40ch}
+
+  .facts-strip{
+    margin-top:1.4rem;display:flex;flex-wrap:wrap;gap:.5rem .4rem;
+    font-size:.8rem;color:var(--ink-soft);
+  }
+  .facts-strip span{
+    background:var(--white);border:1px solid var(--hair);
+    padding:.3rem .55rem;white-space:nowrap;
+  }
+
+  /* proof / stats */
+  .stats{display:grid;gap:1px;background:var(--hair);
+    border:1px solid var(--hair);margin-top:2rem}
+  @media(min-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:960px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--paper);padding:1.4rem 1.1rem}
+  .stat b{display:block;font-size:clamp(2rem,5vw,3.4rem);font-weight:700;
+    letter-spacing:-.04em;line-height:.9}
+  .stat small{display:block;margin-top:.5rem;font-size:.78rem;
+    text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft)}
+  .titles{margin-top:1.6rem;display:grid;gap:.5rem;max-width:60ch}
+  .titles li{display:flex;gap:.6rem;align-items:baseline;list-style:none;
+    font-size:.95rem}
+  .titles ul{margin:0;padding:0}
+  .refs{margin-top:1rem;font-size:.85rem;color:var(--ink-soft);max-width:60ch}
+
+  /* inclusie */
+  .quote{
+    font-size:clamp(1.4rem,3.6vw,2.6rem);font-weight:600;
+    text-transform:uppercase;letter-spacing:-.03em;line-height:1.02;
+    max-width:22ch;margin:0;
+  }
+  .quote em{font-style:normal;color:var(--disco)}
+
+  /* terminus CTA */
+  .terminus{
+    background:var(--ink);color:var(--white);
+    margin-top:2rem;padding:clamp(2rem,5vw,3.4rem);
+  }
+  .terminus h2{color:var(--white)}
+  .terminus .lede{color:#eaeaea}
+  .terminus .plate{background:var(--urban);color:var(--ink)}
+  .terminus .muted{color:#9a9a9e}
+
+  /* footer signage */
+  footer{
+    background:var(--ink);color:var(--white);
+    position:relative;z-index:2;
+    padding:clamp(2.5rem,6vw,4rem) var(--gutter) 5rem
+            calc(var(--rail-x) + 1.4rem);
+  }
+  footer a{color:#eaeaea;text-decoration:none}
+  footer a:hover{color:var(--urban)}
+  .foot-grid{display:grid;gap:2rem}
+  @media(min-width:760px){.foot-grid{grid-template-columns:2fr 1fr 1fr}}
+  .foot-title{display:flex;align-items:center;gap:.7rem;
+    font-weight:700;text-transform:uppercase;letter-spacing:-.02em;
+    font-size:1.4rem;margin-bottom:1rem}
+  .foot h4{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+    color:#9a9a9e;margin:0 0 .7rem}
+  .foot ul{list-style:none;margin:0;padding:0;display:grid;gap:.4rem;font-size:.9rem}
+  .hash{margin-top:1.2rem;font-size:.8rem;color:#9a9a9e;letter-spacing:.02em}
+  .hash b{color:var(--urban);font-weight:600}
+  .colophon{margin-top:2.5rem;font-size:.68rem;color:#77777b;letter-spacing:.04em}
+
+  /* desktop rail geometry */
+  @media(min-width:900px){
+    :root{--rail-x:var(--rail-x-lg)}
+    .wrap{padding-left:calc(var(--rail-x) + 3.2rem)}
+    footer{padding-left:calc(var(--rail-x) + 3.2rem)}
+    .marker{left:calc(-1 * 3.2rem)}
+    .display{max-width:16ch}
+  }
+
+  /* =======================================================================
+     REDUCED MOTION — full state, no scrubbing
+     ===================================================================== */
+  @media(prefers-reduced-motion:reduce){
+    *{scroll-behavior:auto !important}
+    .rise{opacity:1 !important;transform:none !important;transition:none !important}
+    .marker{opacity:1 !important;scale:1 !important;transition:none !important}
+    .train,.train-chip{display:none !important}
+    .btn:hover,.line:hover,.photo:hover{transform:none !important}
+  }
+</style>
+
+<a class="skip" href="#station-1">Naar hoofdinhoud</a>
+
+<div class="concept-tag" aria-hidden="true">Concept B · <b>Ride the Line</b></div>
+
+<!-- Fixed decorative rail behind content (kept subtle; the drawing line is the .railline) -->
+<div class="rail" aria-hidden="true">
+  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+    <line x1="0" y1="0" x2="0" y2="100" stroke="none"/>
+  </svg>
+</div>
+
+<!-- The DRAWING line — spans full document height, drawn by scroll -->
+<div class="railline" id="railline" aria-hidden="true">
+  <svg id="railsvg" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- ghost track (paper hairline) -->
+    <path id="track-ghost" fill="none" stroke="#d9d9d9" stroke-width="10"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- drawn track (ink) -->
+    <path id="track-draw" fill="none" stroke="#1a1a1c" stroke-width="10"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<!-- Moving "you are here" train node -->
+<div class="train" id="train" aria-hidden="true">
+  <svg viewBox="0 0 22 22">
+    <circle cx="11" cy="11" r="10" fill="#fdd630"/>
+    <circle cx="11" cy="11" r="10" fill="none" stroke="#1a1a1c" stroke-width="2"/>
+    <circle cx="11" cy="11" r="3.2" fill="#1a1a1c"/>
+  </svg>
+</div>
+<div class="train-chip" id="trainChip" aria-hidden="true">Start halte</div>
+
+<main>
+  <div class="wrap">
+
+    <!-- ================================================================
+         STATION 1 · START HALTE — hero
+         ================================================================ -->
+    <section class="station" id="station-1" data-station="Start halte" aria-labelledby="s1-h">
+      <span class="marker" data-marker="local" data-color="#fdd630"></span>
+      <div class="station__meta">
+        <span class="station__no rise">Lijn H · richting talent</span>
+        <span class="station__kicker rise d1">Halte 01 — Roeselare</span>
+      </div>
+
+      <h1 class="display rise d1" id="s1-h">Get your talent<br>on track!</h1>
+      <p class="lede rise d2">
+        Welkom bij Hypnosis Dance Academy. Stap op, kies je richting, en laat
+        je meenemen langs elke halte van jouw dansreis.
+      </p>
+      <p class="body rise d3">
+        <strong>~1000 dansers</strong>, <strong>11 jaar onderweg</strong>,
+        één thuishaven in Roeselare. Van kleuter tot volwassene, recreatief
+        tot internationaal wedstrijdniveau.
+      </p>
+      <div class="cta-row rise d4">
+        <a class="btn btn--yellow" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+          Inschrijven <span class="arrow" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="btn btn--ghost" href="#station-7">
+          Gratis proefles <span class="arrow" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         STATION 2 · FUN vs CHALLENGE — Local vs Express
+         ================================================================ -->
+    <section class="station" id="station-2" data-station="Fun of Challenge" aria-labelledby="s2-h">
+      <span class="marker" data-marker="express" data-color="#943f90"></span>
+      <div class="station__meta">
+        <span class="station__no rise">Halte 02</span>
+        <span class="station__kicker rise d1">Kies je tempo</span>
+      </div>
+
+      <h2 class="title rise d1" id="s2-h">Local of Express?<br>Jij kiest je tempo.</h2>
+      <p class="lede rise d2">
+        Wij zijn de grondlegger van <strong>Fun &amp; Challenge</strong>. Twee
+        treinen op hetzelfde net — jij bepaalt hoe hard je gaat.
+      </p>
+
+      <div class="tracks">
+        <div class="track rise d2">
+          <h3><span class="bullet bullet--j"><span>F</span></span> Fun — Local</h3>
+          <div class="stop">
+            <svg class="stopdot" viewBox="0 0 14 14" aria-hidden="true">
+              <circle cx="7" cy="7" r="6" fill="#fff" stroke="#00933c" stroke-width="2.5"/>
+            </svg>
+            Local stop — stopt overal, geniet van de rit
+          </div>
+          <ul>
+            <li>Plezier, ontspanning, sociaal contact</li>
+            <li>In je eigen tempo leren dansen</li>
+            <li>Kleine groepen, echte begeleiding</li>
+          </ul>
+        </div>
+
+        <div class="track rise d3">
+          <h3><span class="bullet bullet--d"><span>C</span></span> Challenge — Express</h3>
+          <div class="stop">
+            <svg class="stopdot" viewBox="0 0 14 14" aria-hidden="true">
+              <rect x="2" y="2" width="10" height="10" transform="rotate(45 7 7)"
+                    fill="#fff" stroke="#943f90" stroke-width="2.5"/>
+            </svg>
+            Express stop — sneller, verder, ambitieus
+          </div>
+          <ul>
+            <li>Techniek, ambitie en groei</li>
+            <li>Richting wedstrijdteams en podium</li>
+            <li>17 wedstrijdteams om naartoe te werken</li>
+          </ul>
+        </div>
+      </div>
+      <p class="body muted rise d4" style="margin-top:1.4rem">
+        Max. 28 dansers per cursus — uit principe, niet voor het geld.
+        Kleine groepen betekenen echte, individuele begeleiding.
+      </p>
+    </section>
+
+    <!-- ================================================================
+         STATION 3 · VIND JOUW LIJN — de dansstijlen
+         ================================================================ -->
+    <section class="station" id="station-3" data-station="Vind jouw lijn" aria-labelledby="s3-h">
+      <span class="marker" data-marker="interchange" data-color="#374b9a"></span>
+      <div class="station__meta">
+        <span class="station__no rise">Halte 03 — knooppunt</span>
+        <span class="station__kicker rise d1">Overstappen mag altijd</span>
+      </div>
+
+      <h2 class="title rise d1" id="s3-h">Vind jouw lijn</h2>
+      <p class="lede rise d2">
+        Elke dansstijl is een eigen lijn op het net. Volg er één, of stap over
+        en ontdek waar je thuis hoort.
+      </p>
+
+      <div class="index" role="list">
+        <a class="line rise d2" role="listitem" href="#station-7">
+          <span class="bullet bullet--u"><span>U</span></span>
+          <span class="line__name">Urban</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d2" role="listitem" href="#station-7">
+          <span class="bullet bullet--d"><span>D</span></span>
+          <span class="line__name">Disco</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d2" role="listitem" href="#station-7">
+          <span class="bullet bullet--m"><span>M</span></span>
+          <span class="line__name">Modern</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d3" role="listitem" href="#station-7">
+          <span class="bullet bullet--j"><span>J</span></span>
+          <span class="line__name">Jazz</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d3" role="listitem" href="#station-7">
+          <span class="bullet bullet--b"><span>B</span></span>
+          <span class="line__name">Ballet</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d3" role="listitem" href="#station-7">
+          <span class="bullet bullet--c"><span>C</span></span>
+          <span class="line__name">Clipdance</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d3" role="listitem" href="#station-7">
+          <span class="bullet bullet--g"><span>G</span></span>
+          <span class="line__name">G-Dans</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d4" role="listitem" href="#station-7">
+          <span class="bullet bullet--t"><span>T</span></span>
+          <span class="line__name">Tricks</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d4" role="listitem" href="#station-7">
+          <span class="bullet bullet--k"><span>K</span></span>
+          <span class="line__name">Kleuterdans</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d4" role="listitem" href="#station-7">
+          <span class="bullet bullet--f"><span>F</span></span>
+          <span class="line__name">Fitness</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="line rise d4" role="listitem" href="#station-7">
+          <span class="bullet bullet--mu"><span>Mu</span></span>
+          <span class="line__name">Musical</span><span class="line__arr" aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+      <p class="roster rise d4">
+        En op de zijlijnen: Breakdance, Commercial, Heels, Koppeldans, Latin,
+        Paaldansen, Stretching. 18 stijlen in totaal — voor elk niveau een halte.
+      </p>
+    </section>
+
+    <!-- ================================================================
+         STATION 4 · BASECAMP — home of the hypno's (harbour/home)
+         ================================================================ -->
+    <section class="station" id="station-4" data-station="BASECAMP" aria-labelledby="s4-h">
+      <span class="marker" data-marker="local" data-color="#ec6427"></span>
+      <div class="station__meta">
+        <span class="station__no rise">Halte 04 — Groenestraat 170B</span>
+        <span class="station__kicker rise d1">Home of the hypno's</span>
+      </div>
+
+      <div class="plate rise d1" style="margin-bottom:1.2rem">
+        <span class="bullet bullet--sm bullet--b"><span>B</span></span> BASECAMP
+      </div>
+      <h2 class="title rise d1" id="s4-h">Wij zijn die vuurtoren<br>in tijden van storm.</h2>
+      <p class="lede rise d2">
+        De safe haven voor velen. BASECAMP is de veilige plek waar je vertrekt
+        en waar je altijd weer aanmeert — jouw tweede thuis.
+      </p>
+
+      <div class="grid grid-3" style="margin-top:2rem">
+        <div class="zaal rise d2">
+          <div class="photo ratio-4-3" role="img" aria-label="foto — de zaal Broadway met lichtinstallatie">
+            <span class="cap">foto — broadway</span>
+          </div>
+          <h3><span class="bullet bullet--sm bullet--u"><span>U</span></span> Broadway</h3>
+          <p>De grootste zaal. Lichtinstallatie en 360&deg; geluid.</p>
+        </div>
+        <div class="zaal rise d3">
+          <div class="photo ratio-4-3" role="img" aria-label="foto — de urban zaal The Bronx">
+            <span class="cap">foto — the bronx</span>
+          </div>
+          <h3><span class="bullet bullet--sm bullet--d"><span>D</span></span> The Bronx</h3>
+          <p>Urban en hiphop. Rauw, ritmisch, van de straat.</p>
+        </div>
+        <div class="zaal rise d4">
+          <div class="photo ratio-4-3" role="img" aria-label="foto — de klassieke zaal Manhattan met barres">
+            <span class="cap">foto — manhattan</span>
+          </div>
+          <h3><span class="bullet bullet--sm bullet--m"><span>M</span></span> Manhattan</h3>
+          <p>Klassiek en ballet. Barres en spiegelwanden.</p>
+        </div>
+      </div>
+
+      <div class="facts-strip rise d4">
+        <span>CO&#8322;-neutraal danscenter — eerste in Belgi&euml;</span>
+        <span>Zwevende dansvloeren</span>
+        <span>Klimaatcontrole</span>
+        <span>Central Park — bar, 90+ zitplaatsen</span>
+        <span>Fifth Avenue — kledingshop</span>
+        <span>The Printing House — fitness</span>
+        <span>Columbia — studeerlounge</span>
+        <span>Priv&eacute;-parking &amp; warme maaltijden</span>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         STATION 5 · BEWIJS — terminus of proof
+         ================================================================ -->
+    <section class="station" id="station-5" data-station="Bewijs" aria-labelledby="s5-h">
+      <span class="marker" data-marker="express" data-color="#943f90"></span>
+      <div class="station__meta">
+        <span class="station__no rise">Halte 05</span>
+        <span class="station__kicker rise d1">Het bewijs op de rit</span>
+      </div>
+
+      <h2 class="title rise d1" id="s5-h">Hier groeit niet alleen<br>een sterke danser.</h2>
+      <p class="lede rise d2">
+        Maar ook een sterk persoon. Onderweg leer je doorzetten, samenwerken
+        en durven — dat neem je overal mee naartoe.
+      </p>
+
+      <div class="stats" role="list">
+        <div class="stat rise d2" role="listitem"><b>~1000</b><small>dansers</small></div>
+        <div class="stat rise d2" role="listitem"><b>11</b><small>jaar onderweg</small></div>
+        <div class="stat rise d3" role="listitem"><b>30+</b><small>gediplomeerde docenten</small></div>
+        <div class="stat rise d3" role="listitem"><b>17</b><small>wedstrijdteams</small></div>
+      </div>
+
+      <ul class="titles rise d3">
+        <li><span class="bullet bullet--sm bullet--d"><span>D</span></span>
+          Meervoudig <strong>Wereld- &amp; Europees kampioen Disco 2025</strong></li>
+        <li><span class="bullet bullet--sm bullet--u"><span>U</span></span>
+          Vice-EK Hiphop 2026</li>
+        <li><span class="bullet bullet--sm bullet--m"><span>M</span></span>
+          Meervoudig Belgisch &amp; Vlaams kampioen (Disco / Hiphop / Modern)</li>
+        <li><span class="bullet bullet--sm bullet--j"><span>J</span></span>
+          Jeugdsportploeg van het jaar 2025</li>
+      </ul>
+      <p class="refs rise d4">
+        Op het podium: dansers voor #LikeMe, Halloween- &amp; Kerstshows in
+        Bellewaerde, kerstparades in Belgi&euml; en Frankrijk, Belgium's Got
+        Talent, The Greatest Dancer, MNM en Rode Neuzendag (VTM).
+      </p>
+    </section>
+
+    <!-- ================================================================
+         STATION 6 · IEDEREEN HOORT ERBIJ — inclusie
+         ================================================================ -->
+    <section class="station" id="station-6" data-station="Iedereen hoort erbij" aria-labelledby="s6-h">
+      <span class="marker" data-marker="interchange" data-color="#c73f90"></span>
+      <div class="station__meta">
+        <span class="station__no rise">Halte 06</span>
+        <span class="station__kicker rise d1">Elk perron is toegankelijk</span>
+      </div>
+
+      <h2 class="quote rise d1" id="s6-h">Iedereen<br>hoort <em>erbij.</em></h2>
+      <p class="lede rise d2">
+        Bij Hypnosis geloven we dat dans voor iedereen moet zijn. Niet iedereen
+        hoeft op een podium te staan om een echte danser te zijn.
+      </p>
+
+      <div class="grid grid-2" style="margin-top:2rem">
+        <div class="rise d2">
+          <div class="plate" style="margin-bottom:1rem">
+            <span class="bullet bullet--sm bullet--c"><span>C</span></span> Magic &amp; Rising Stars
+          </div>
+          <p class="body">
+            Dans voor mensen met een beperking, onder wie het Down-syndroom.
+            De enige in de regio — omdat iedereen recht heeft op een halte op
+            dit net.
+          </p>
+        </div>
+        <div class="photo ratio-16-9 rise d3" role="img"
+             aria-label="foto — dansers van Magic & Rising Stars op het podium">
+          <span class="cap">foto — magic &amp; rising stars</span>
+        </div>
+      </div>
+      <p class="body muted rise d4" style="margin-top:1.4rem">
+        Home of the hypno's. Hier ontstaan vriendschappen voor het leven.
+        Warm, familiaal — een echte tweede thuis.
+      </p>
+    </section>
+
+    <!-- ================================================================
+         STATION 7 · EINDHALTE — inschrijven (CTA / terminus)
+         ================================================================ -->
+    <section class="station" id="station-7" data-station="Eindhalte — inschrijven" aria-labelledby="s7-h">
+      <span class="marker" data-marker="terminus" data-color="#fdd630"></span>
+      <div class="station__meta">
+        <span class="station__no rise">Halte 07 — eindhalte</span>
+        <span class="station__kicker rise d1">Instappen maar</span>
+      </div>
+
+      <div class="terminus rise d1">
+        <div class="plate" style="margin-bottom:1.2rem">
+          Eindhalte <span class="arrow" aria-hidden="true">&rarr;</span> Inschrijven
+        </div>
+        <h2 class="title" id="s7-h">Jouw reis begint<br>seizoen 2026&ndash;2027.</h2>
+        <p class="lede">
+          Talentontwikkeling — daar staan we voor. Reserveer je plek en stap op
+          bij de volgende halte.
+        </p>
+        <div class="facts-strip" style="color:#cfcfd2">
+          <span style="background:#2a2a2e;border-color:#3a3a3e;color:#fff">
+            Start: MA 7 sept 2026</span>
+          <span style="background:#2a2a2e;border-color:#3a3a3e;color:#fff">
+            Gratis proeflessenweek 7&ndash;12 sept 2026</span>
+          <span style="background:#2a2a2e;border-color:#3a3a3e;color:#fff">
+            28 lessen per seizoen (sept&ndash;mei)</span>
+          <span style="background:#2a2a2e;border-color:#3a3a3e;color:#fff">
+            BASECAMP — Groenestraat 170B, Roeselare</span>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn--yellow" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+            Inschrijven <span class="arrow" aria-hidden="true">&rarr;</span>
+          </a>
+          <a class="btn" style="border-color:#fff;background:transparent;color:#fff"
+             href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+            Boek je gratis proefles <span class="arrow" aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- ====================================================================
+     FOOTER — signage style
+     ==================================================================== -->
+<footer>
+  <div class="foot-grid">
+    <div>
+      <div class="foot-title">
+        <span class="bullet bullet--sm bullet--u"><span>H</span></span>
+        Hypnosis Dance Academy
+      </div>
+      <p style="max-width:40ch;color:#cfcfd2;font-size:.95rem;margin:0">
+        Get your talent on track! Dansschool in Roeselare sinds 2015 —
+        met wortels als hiphopcrew sinds 2004. Directie: Steve Burggraeve
+        &amp; Sally.
+      </p>
+      <p class="hash">
+        <b>#homeofthehypnos</b> &nbsp; <b>#TheOnlyWayIsUp</b>
+      </p>
+    </div>
+
+    <div class="foot">
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="mailto:info@hdac.be">info@hdac.be</a></li>
+        <li><a href="tel:+32486414404">0486 414 404</a></li>
+        <li>Broeder Adolfsstraat 3<br>8800 Roeselare</li>
+        <li>BASECAMP — Groenestraat 170B</li>
+      </ul>
+    </div>
+
+    <div class="foot">
+      <h4>Volg ons</h4>
+      <ul>
+        <li><a href="#station-1">Facebook <span aria-hidden="true">&rarr;</span></a></li>
+        <li><a href="#station-1">Instagram <span aria-hidden="true">&rarr;</span></a></li>
+        <li><a href="#station-1">TikTok <span aria-hidden="true">&rarr;</span></a></li>
+        <li><a href="#station-1">YouTube <span aria-hidden="true">&rarr;</span></a></li>
+      </ul>
+      <h4 style="margin-top:1.4rem">Inschrijven</h4>
+      <ul>
+        <li><a href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+          ledenbeheer.be <span aria-hidden="true">&rarr;</span></a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="colophon">
+    Concept B · Ride the Line — ideation prototype. Kleuren, letters en
+    lijntoewijzing zijn een werkvoorstel op basis van de Hypnosis-huisstijl.
+  </p>
+</footer>
+
+<script>
+/* ==========================================================================
+   RIDE THE LINE — scroll-driven subway drawing + station arrivals
+   Vanilla JS. rAF-throttled scroll for the line draw; IntersectionObserver
+   for station reveals. prefers-reduced-motion => static final state.
+   ========================================================================== */
+(function(){
+  "use strict";
+
+  var reduce = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var stations = Array.prototype.slice.call(document.querySelectorAll(".station"));
+
+  /* ----------------------------------------------------------------------
+     STATION MARKERS — draw the correct MTA glyph into each .marker
+     local  = white filled circle w/ coloured ring
+     express= white diamond w/ coloured ring
+     interchange = white capsule bridging
+     terminus = coloured filled disc w/ bar (end of line)
+     -------------------------------------------------------------------- */
+  function markerSVG(kind, color){
+    switch(kind){
+      case "express":
+        return '<svg viewBox="0 0 34 34" aria-hidden="true">'
+          + '<rect x="9" y="9" width="16" height="16" transform="rotate(45 17 17)" '
+          + 'fill="#fff" stroke="'+color+'" stroke-width="4"/></svg>';
+      case "interchange":
+        return '<svg viewBox="0 0 34 34" aria-hidden="true">'
+          + '<rect x="4" y="10" rx="7" ry="7" width="26" height="14" '
+          + 'fill="#fff" stroke="'+color+'" stroke-width="4"/></svg>';
+      case "terminus":
+        return '<svg viewBox="0 0 34 34" aria-hidden="true">'
+          + '<circle cx="17" cy="17" r="11" fill="'+color+'" '
+          + 'stroke="#1a1a1c" stroke-width="3"/>'
+          + '<rect x="12" y="15" width="10" height="4" fill="#1a1a1c"/></svg>';
+      default: /* local */
+        return '<svg viewBox="0 0 34 34" aria-hidden="true">'
+          + '<circle cx="17" cy="17" r="10" fill="#fff" '
+          + 'stroke="'+color+'" stroke-width="4.5"/></svg>';
+    }
+  }
+  stations.forEach(function(st){
+    var m = st.querySelector(".marker");
+    if(!m) return;
+    m.innerHTML = markerSVG(m.getAttribute("data-marker"),
+                            m.getAttribute("data-color") || "#1a1a1c");
+  });
+
+  /* ----------------------------------------------------------------------
+     THE DRAWING LINE
+     Build a straight vertical path (with tiny Vignelli 45-degree jogs at
+     each station) that spans the full document height, in the rail column.
+     Draw it via stroke-dashoffset bound to scroll progress.
+     -------------------------------------------------------------------- */
+  var svg   = document.getElementById("railsvg");
+  var ghost = document.getElementById("track-ghost");
+  var draw  = document.getElementById("track-draw");
+  var railWrap = document.getElementById("railline");
+
+  var pathLen = 0;
+  var docH = 0;
+
+  function railX(){
+    // resolve --rail-x (px) at current viewport
+    var probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;left:var(--rail-x);width:0;height:0";
+    document.body.appendChild(probe);
+    var x = probe.getBoundingClientRect().left + window.scrollX;
+    document.body.removeChild(probe);
+    return x;
+  }
+
+  function buildPath(){
+    docH = Math.max(
+      document.body.scrollHeight, document.documentElement.scrollHeight
+    );
+    var w = window.innerWidth;
+    svg.setAttribute("viewBox", "0 0 " + w + " " + docH);
+    svg.setAttribute("width", w);
+    svg.setAttribute("height", docH);
+    railWrap.style.height = docH + "px";
+
+    var x = railX();
+    // gentle jogs: at each station center, kick out ~14px then back (45deg)
+    var d = "M " + x + " 0";
+    var start = 80;
+    d += " L " + x + " " + start;
+
+    stations.forEach(function(st){
+      var top = st.offsetTop;
+      var cy  = top + parseFloat(getComputedStyle(st).paddingTop) - 6;
+      var j = 14; // jog amount
+      // approach, 45deg out, straight, 45deg back — Vignelli geometry
+      d += " L " + x + " " + (cy - 26);
+      d += " L " + (x + j) + " " + (cy - 12);
+      d += " L " + (x + j) + " " + (cy + 12);
+      d += " L " + x + " " + (cy + 26);
+    });
+
+    d += " L " + x + " " + (docH - 40);
+
+    ghost.setAttribute("d", d);
+    draw.setAttribute("d", d);
+
+    pathLen = draw.getTotalLength();
+    draw.style.strokeDasharray = pathLen;
+    if(reduce){
+      draw.style.strokeDashoffset = 0;   // fully drawn, static
+    }else{
+      draw.style.strokeDashoffset = pathLen;
+    }
+  }
+
+  /* progress mapping — scroll position => how much line is drawn */
+  var train    = document.getElementById("train");
+  var trainChip= document.getElementById("trainChip");
+  var currentChip = "";
+
+  function scrollProgress(){
+    var st = window.scrollY || window.pageYOffset;
+    var max = docH - window.innerHeight;
+    return max > 0 ? Math.min(1, Math.max(0, st / max)) : 0;
+  }
+
+  function update(){
+    if(reduce) return;
+    var p = scrollProgress();
+    draw.style.strokeDashoffset = pathLen * (1 - p);
+
+    // move the "you are here" train down the fixed rail
+    var vh = window.innerHeight;
+    // train tracks viewport-anchored position of the current scroll depth:
+    // put it at the point on screen where the drawn line currently reaches.
+    var y = Math.min(vh - 24, Math.max(24, p * (vh - 48) + 24));
+    train.style.top = y + "px";
+    trainChip.style.top = y + "px";
+  }
+
+  /* rAF throttle */
+  var ticking = false;
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      update();
+      ticking = false;
+    });
+  }
+
+  /* ----------------------------------------------------------------------
+     STATION ARRIVALS — reveal + station-name pin (train chip)
+     -------------------------------------------------------------------- */
+  if("IntersectionObserver" in window && !reduce){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          e.target.classList.add("is-here");
+          var name = e.target.getAttribute("data-station");
+          if(name && name !== currentChip){
+            currentChip = name;
+            trainChip.textContent = name;
+          }
+        }
+      });
+    }, { threshold:0.28, rootMargin:"-8% 0px -32% 0px" });
+    stations.forEach(function(s){ io.observe(s); });
+  }else{
+    // reduced motion or no IO: everything present
+    stations.forEach(function(s){ s.classList.add("is-here"); });
+    train.style.display = "none";
+    trainChip.style.display = "none";
+  }
+
+  /* ----------------------------------------------------------------------
+     INIT + resize handling (debounced rebuild of the path)
+     -------------------------------------------------------------------- */
+  function build(){ buildPath(); update(); }
+
+  var rt;
+  function onResize(){
+    clearTimeout(rt);
+    rt = setTimeout(build, 160);
+  }
+
+  window.addEventListener("scroll", onScroll, { passive:true });
+  window.addEventListener("resize", onResize);
+  // fonts/images can't shift layout here (none loaded), but load is safest
+  window.addEventListener("load", build);
+
+  // build after first paint so LCP (hero) is never blocked
+  requestAnimationFrame(build);
+})();
+</script>

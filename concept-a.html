@@ -1,0 +1,992 @@
+<!--
+  ============================================================================
+  HYPNOSIS DANCE ACADEMY — Homepage ideation prototype
+  CONCEPT A · "THE LIVING MAP"
+  ----------------------------------------------------------------------------
+  A single, self-contained ideation prototype for a Craft-5 redesign of
+  hdac.be. The homepage centrepiece is an interactive NYC-subway-style
+  transit map (Vignelli geometry: 45/90 degrees only, uniform line weight)
+  built in inline SVG using Hypnosis's real line colours and letters.
+
+  Lines draw themselves in on load (stroke-dashoffset, pathLength="1"),
+  respond to hover/focus/click, and open a detail panel per dance style.
+  As you scroll, the network recontextualises into BASECAMP, the proof
+  terminus, and the inclusion stop.
+
+  No external libraries, CDNs, fonts, or images. Vanilla JS + CSS + inline
+  SVG only. Dutch copy throughout; tagline stays English. Mobile-first,
+  accessible, prefers-reduced-motion respected.
+  ============================================================================
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypnosis Dance Academy — Get your talent on track</title>
+<meta name="description" content="Ideatie-prototype — Concept A · The Living Map. Een levende metrokaart voor talent.">
+
+<style>
+  /* =========================================================================
+     Design tokens
+     ========================================================================= */
+  :root{
+    --ink:#1a1a1c;
+    --paper:#f4f4f4;
+    --white:#ffffff;
+    --line-weak:#d7d7d9;
+    --dim:#c8c8ca;
+
+    /* The line network (real Hypnosis palette) */
+    --u:#fdd630;  /* Urban  — black text */
+    --d:#943f90;  /* Disco  */
+    --m:#374b9a;  /* Modern */
+    --j:#00933c;  /* Jazz   */
+    --b:#ec6427;  /* Ballet */
+    --c:#c73f90;  /* Clipdance */
+    --g:#70b747;  /* G-Dans */
+    --t:#996633;  /* Tricks */
+    --k:#a7a9ab;  /* Kleuterdans — black text */
+    --f:#e73730;  /* Fitness */
+    --mu:#00add0; /* Musical */
+
+    --pad:clamp(1.1rem, 4vw, 3.5rem);
+    --maxw:1240px;
+    --draw-dur:1600ms;
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight:400;
+    line-height:1.5;
+    letter-spacing:-0.01em;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-0.03em;line-height:1.02;text-transform:uppercase}
+  p{margin:0}
+  a{color:inherit}
+  img{max-width:100%}
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
+
+  /* Accessible skip link */
+  .skip{
+    position:absolute;left:-9999px;top:0;z-index:200;
+    background:var(--ink);color:var(--white);padding:.7rem 1rem;
+    text-transform:uppercase;font-weight:600;letter-spacing:.02em;font-size:.8rem;
+  }
+  .skip:focus{left:.6rem;top:.6rem}
+
+  /* Global visible focus */
+  a:focus-visible,button:focus-visible,[tabindex]:focus-visible,.line-hit:focus-visible{
+    outline:3px solid var(--ink);outline-offset:3px;border-radius:2px;
+  }
+
+  /* =========================================================================
+     Line bullet (core atom)
+     ========================================================================= */
+  .bullet{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:1.9em;height:1.9em;border-radius:50%;
+    background:var(--ink);color:var(--white);
+    font-weight:500;letter-spacing:0;line-height:1;
+    font-size:1rem;flex:0 0 auto;
+    user-select:none;
+  }
+  .bullet span{transform:translateY(-3%);font-size:.62em;font-weight:600}
+  .bullet[data-line="U"]{background:var(--u);color:#000}
+  .bullet[data-line="D"]{background:var(--d)}
+  .bullet[data-line="M"]{background:var(--m)}
+  .bullet[data-line="J"]{background:var(--j)}
+  .bullet[data-line="B"]{background:var(--b)}
+  .bullet[data-line="C"]{background:var(--c)}
+  .bullet[data-line="G"]{background:var(--g)}
+  .bullet[data-line="T"]{background:var(--t)}
+  .bullet[data-line="K"]{background:var(--k);color:#000}
+  .bullet[data-line="F"]{background:var(--f)}
+  .bullet[data-line="Mu"]{background:var(--mu)}
+  .bullet.lg{width:3.4em;height:3.4em;font-size:1rem}
+  .bullet.sm{width:1.5em;height:1.5em}
+
+  /* =========================================================================
+     Top bar
+     ========================================================================= */
+  .topbar{
+    position:sticky;top:0;z-index:120;
+    background:var(--ink);color:var(--white);
+  }
+  .topbar .wrap{display:flex;align-items:center;gap:1rem;min-height:60px;padding-top:.5rem;padding-bottom:.5rem}
+  .brand{display:flex;align-items:center;gap:.6rem;text-decoration:none;font-weight:600;letter-spacing:-0.02em;text-transform:uppercase;font-size:1.02rem}
+  .brand .bullet{font-size:.92rem}
+  .topnav{margin-left:auto;display:none;gap:1.4rem;align-items:center}
+  .topnav a{text-decoration:none;text-transform:uppercase;font-size:.78rem;font-weight:500;letter-spacing:.02em;color:#e7e7e7}
+  .topnav a:hover{color:#fff}
+  .btn{
+    display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;
+    text-transform:uppercase;font-weight:600;font-size:.8rem;letter-spacing:.01em;
+    padding:.65rem 1rem;border:2px solid transparent;white-space:nowrap;
+  }
+  .btn .arrow{font-weight:700}
+  .btn--y{background:var(--u);color:#000}
+  .btn--y:hover{background:#ffe25a}
+  .btn--ghost{border-color:#4a4a4d;color:#fff}
+  .btn--ghost:hover{border-color:#fff}
+  .btn--ink{background:var(--ink);color:#fff}
+  .btn--ink:hover{background:#000}
+  .btn--big{font-size:.92rem;padding:.9rem 1.3rem}
+  @media(min-width:900px){.topnav{display:flex}}
+
+  /* =========================================================================
+     Hero + map
+     ========================================================================= */
+  .hero{position:relative;background:var(--paper);padding-top:clamp(1.4rem,4vw,3rem);padding-bottom:clamp(2rem,5vw,4rem)}
+  .hero__kicker{
+    display:inline-flex;align-items:center;gap:.55rem;
+    background:var(--ink);color:#fff;text-transform:uppercase;
+    font-size:.72rem;font-weight:600;letter-spacing:.06em;padding:.4rem .7rem;
+  }
+  .hero__kicker .dot{width:.5rem;height:.5rem;border-radius:50%;background:var(--u)}
+  .hero__title{
+    font-size:clamp(2.75rem,8vw,8rem);
+    line-height:.92;margin:.7rem 0 0;max-width:14ch;
+  }
+  .hero__title em{font-style:normal;color:var(--ink);position:relative;white-space:nowrap}
+  .hero__title .u{color:#000;background:var(--u);padding:0 .12em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  .hero__sub{margin-top:1.1rem;max-width:46ch;font-size:clamp(1rem,1.6vw,1.22rem);line-height:1.45;color:#333}
+  .hero__cta{margin-top:1.5rem;display:flex;flex-wrap:wrap;gap:.7rem}
+
+  .hero__grid{display:grid;gap:clamp(1.5rem,3vw,2.5rem);align-items:center}
+  @media(min-width:960px){.hero__grid{grid-template-columns:0.92fr 1.08fr}}
+
+  /* Map frame */
+  .mapframe{
+    position:relative;background:var(--white);
+    border:2px solid var(--ink);
+    padding:clamp(.7rem,1.5vw,1.1rem);
+  }
+  .mapframe__bar{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:.6rem;margin-bottom:.6rem;
+  }
+  .mapframe__title{text-transform:uppercase;font-size:.72rem;font-weight:600;letter-spacing:.08em}
+  .mapframe__hint{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:#7a7a7c}
+  .map-svg{display:block;width:100%;height:auto}
+
+  /* Route line paths */
+  .route{fill:none;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;transition:opacity .3s ease,stroke-width .2s ease}
+  .route.U{stroke:var(--u)} .route.D{stroke:var(--d)} .route.M{stroke:var(--m)}
+  .route.J{stroke:var(--j)} .route.B{stroke:var(--b)} .route.C{stroke:var(--c)}
+  .route.G{stroke:var(--g)} .route.T{stroke:var(--t)} .route.K{stroke:var(--k)}
+  .route.F{stroke:var(--f)} .route.Mu{stroke:var(--mu)}
+
+  /* Draw animation */
+  .anim .route{stroke-dasharray:1;stroke-dashoffset:1;animation:draw var(--draw-dur) cubic-bezier(.65,.02,.28,1) forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+
+  /* stations */
+  .stop{transition:opacity .3s ease}
+  .stop-local{fill:var(--white);stroke:var(--ink);stroke-width:3}
+  .stop-express{fill:var(--white);stroke:var(--ink);stroke-width:3}
+  .stop-lbl{font-size:11px;font-weight:500;fill:var(--ink);letter-spacing:-0.01em}
+  .anim .stop,.anim .stop-lbl{opacity:0;animation:fadein .5s ease forwards;animation-delay:var(--draw-dur)}
+  @keyframes fadein{to{opacity:1}}
+
+  /* Interactive hit-lines (invisible fat stroke for easy targeting) */
+  .line-hit{fill:none;stroke:transparent;stroke-width:26;stroke-linecap:round;cursor:pointer}
+
+  /* dimming when a line is active */
+  .map-svg.has-active .route:not(.is-active){opacity:.16}
+  .map-svg.has-active .stop:not(.is-active),
+  .map-svg.has-active .stop-lbl:not(.is-active){opacity:.22}
+  .map-svg .route.is-active{stroke-width:12}
+
+  /* Legend under map (mobile-first line list) */
+  .legend{margin-top:.7rem;display:flex;flex-wrap:wrap;gap:.35rem}
+  .legend button{
+    display:inline-flex;align-items:center;gap:.4rem;
+    background:var(--paper);border:1.5px solid var(--line-weak);
+    padding:.28rem .5rem .28rem .3rem;cursor:pointer;
+    font:inherit;font-size:.74rem;text-transform:uppercase;font-weight:500;letter-spacing:.01em;
+    transition:border-color .15s ease,background .15s ease;
+  }
+  .legend button:hover{border-color:var(--ink)}
+  .legend button[aria-pressed="true"]{border-color:var(--ink);background:var(--white)}
+  .legend .bullet{font-size:.62rem}
+
+  .maplegenda{margin-top:.55rem;display:flex;flex-wrap:wrap;gap:1rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;color:#555}
+  .maplegenda span{display:inline-flex;align-items:center;gap:.4rem}
+  .glyph{width:16px;height:16px;display:inline-block}
+
+  /* =========================================================================
+     Detail panel (line info)
+     ========================================================================= */
+  .panel-scrim{
+    position:fixed;inset:0;background:rgba(20,20,22,.55);
+    z-index:140;opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease;
+  }
+  .panel-scrim.open{opacity:1;visibility:visible}
+  .panel{
+    position:fixed;z-index:150;top:0;right:0;height:100%;
+    width:min(420px,92vw);background:var(--white);
+    border-left:3px solid var(--ink);
+    transform:translateX(102%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+    display:flex;flex-direction:column;
+  }
+  .panel.open{transform:translateX(0)}
+  .panel__top{background:var(--ink);color:#fff;padding:1.1rem var(--pad)}
+  .panel__row{display:flex;align-items:center;gap:.7rem}
+  .panel__ttl{font-size:1.6rem;text-transform:uppercase;font-weight:600;letter-spacing:-0.02em}
+  .panel__close{
+    margin-left:auto;background:transparent;border:2px solid #4a4a4d;color:#fff;
+    width:2.3rem;height:2.3rem;cursor:pointer;font-size:1.1rem;line-height:1;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+  .panel__close:hover{border-color:#fff}
+  .panel__body{padding:1.2rem var(--pad);overflow-y:auto}
+  .panel__lead{font-size:1rem;line-height:1.5;color:#2a2a2c}
+  .fc{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1.1rem}
+  .fc__cell{border:1.5px solid var(--line-weak);padding:.7rem}
+  .fc__cell h4{font-size:.72rem;letter-spacing:.04em;margin-bottom:.35rem;display:flex;align-items:center;gap:.4rem}
+  .fc__cell p{font-size:.82rem;color:#3a3a3c;line-height:1.4}
+  .fc__glyph{width:14px;height:14px}
+  .metaline{display:flex;align-items:center;gap:.55rem;padding:.55rem 0;border-bottom:1px solid var(--line-weak);font-size:.86rem}
+  .metaline strong{text-transform:uppercase;font-size:.7rem;letter-spacing:.04em;color:#777;min-width:78px}
+  .panel__cta{margin-top:1.3rem}
+
+  /* =========================================================================
+     Section scaffolding + signage
+     ========================================================================= */
+  section{position:relative}
+  .band{padding-top:clamp(3rem,7vw,6rem);padding-bottom:clamp(3rem,7vw,6rem)}
+  .band--ink{background:var(--ink);color:var(--white)}
+  .band--ink p{color:#dcdcdc}
+
+  .sign{
+    display:inline-flex;align-items:center;gap:.7rem;
+    background:var(--ink);color:#fff;padding:.55rem .9rem;
+    text-transform:uppercase;font-weight:600;letter-spacing:-0.01em;
+    font-size:clamp(1.05rem,2.2vw,1.5rem);
+  }
+  .band--ink .sign{background:#000;outline:1px solid #333}
+  .sec-intro{margin-top:1.1rem;max-width:52ch;font-size:clamp(1rem,1.5vw,1.18rem);line-height:1.5}
+
+  /* Fun vs Challenge */
+  .fcgrid{display:grid;gap:1rem;margin-top:2rem}
+  @media(min-width:820px){.fcgrid{grid-template-columns:1fr 1fr}}
+  .fccard{border:2px solid var(--ink);background:var(--white);padding:clamp(1.2rem,3vw,2rem)}
+  .fccard h3{font-size:clamp(1.4rem,3vw,2rem);display:flex;align-items:center;gap:.7rem}
+  .fccard .tag{font-size:.72rem;letter-spacing:.05em;color:#666;text-transform:uppercase;margin-top:.2rem}
+  .fccard p{margin-top:.9rem;font-size:.98rem;line-height:1.5;color:#333}
+  .fccard ul{margin:1rem 0 0;padding:0;list-style:none;display:grid;gap:.5rem}
+  .fccard li{display:flex;align-items:center;gap:.55rem;font-size:.88rem}
+  .fccard .glyph{flex:0 0 auto}
+  .fccard--fun{border-color:var(--m)}
+  .fccard--chal{border-color:var(--b)}
+
+  /* Line index (Vind jouw lijn) */
+  .lineidx{margin-top:2rem;display:grid;gap:.5rem;grid-template-columns:1fr}
+  @media(min-width:620px){.lineidx{grid-template-columns:1fr 1fr}}
+  @media(min-width:980px){.lineidx{grid-template-columns:1fr 1fr 1fr}}
+  .lineidx button{
+    display:flex;align-items:center;gap:.7rem;text-align:left;
+    background:var(--white);border:1.5px solid var(--line-weak);
+    padding:.7rem .8rem;cursor:pointer;font:inherit;
+    transition:border-color .15s ease,transform .15s ease;
+  }
+  .lineidx button:hover{border-color:var(--ink);transform:translateX(3px)}
+  .lineidx .nm{text-transform:uppercase;font-weight:600;letter-spacing:-0.01em;font-size:.95rem}
+  .lineidx .rm{margin-left:auto;font-size:.7rem;text-transform:uppercase;color:#8a8a8c;letter-spacing:.03em}
+  .lineidx .arrow{margin-left:auto;font-weight:700;color:#bbb}
+  .lineidx button:hover .arrow{color:var(--ink)}
+
+  /* BASECAMP — station complex */
+  .basecamp{margin-top:2rem;display:grid;gap:1.4rem}
+  @media(min-width:900px){.basecamp{grid-template-columns:1.15fr .85fr}}
+  .complex{background:var(--white);border:2px solid var(--ink);padding:clamp(1rem,2.5vw,1.6rem)}
+  .platforms{display:grid;gap:.6rem;margin-top:1rem}
+  .platform{display:flex;align-items:center;gap:.7rem;border-left:8px solid var(--ink);padding:.6rem .8rem;background:var(--paper)}
+  .platform.broadway{border-color:var(--u)}
+  .platform.bronx{border-color:var(--c)}
+  .platform.manhattan{border-color:var(--m)}
+  .platform h4{font-size:1rem;letter-spacing:-0.01em}
+  .platform p{font-size:.8rem;color:#555;margin-top:.15rem;text-transform:none;letter-spacing:0}
+  .amenities{margin-top:1.1rem;display:flex;flex-wrap:wrap;gap:.4rem}
+  .chip{display:inline-flex;align-items:center;gap:.4rem;background:var(--paper);border:1px solid var(--line-weak);padding:.32rem .55rem;font-size:.74rem;text-transform:uppercase;letter-spacing:.02em}
+  .chip .d{width:.55rem;height:.55rem;border-radius:50%;background:var(--ink)}
+  .photo{
+    position:relative;background:var(--ink);color:#fff;min-height:220px;
+    display:flex;align-items:flex-end;overflow:hidden;
+  }
+  .photo svg{position:absolute;inset:0;width:100%;height:100%}
+  .photo figcaption{position:relative;padding:.7rem .9rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;background:rgba(0,0,0,.35)}
+  .photo--paper{background:var(--paper);color:var(--ink)}
+  .photo--paper figcaption{background:rgba(255,255,255,.6);color:var(--ink)}
+
+  /* Proof / terminus */
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:2rem;border:2px solid #333}
+  @media(min-width:760px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{padding:1.3rem 1rem;border-right:1px solid #333;border-bottom:1px solid #333}
+  .stat .n{font-size:clamp(2rem,5vw,3.2rem);font-weight:600;letter-spacing:-0.03em;line-height:1}
+  .stat .l{margin-top:.4rem;font-size:.74rem;text-transform:uppercase;letter-spacing:.03em;color:#bdbdbd}
+  .titles{margin-top:1.6rem;display:flex;flex-wrap:wrap;gap:.5rem}
+  .titles .chip{background:#000;border-color:#333;color:#fff}
+  .titles .chip .d{background:var(--u)}
+  .refs{margin-top:1.4rem;font-size:.9rem;color:#cfcfcf;max-width:60ch}
+
+  /* Inclusion */
+  .inclusion{margin-top:2rem;display:grid;gap:1.4rem;align-items:center}
+  @media(min-width:860px){.inclusion{grid-template-columns:.9fr 1.1fr}}
+  .risingstar{background:var(--white);border:2px solid var(--g);padding:clamp(1.2rem,3vw,2rem)}
+  .risingstar h3{font-size:clamp(1.4rem,3vw,2rem);display:flex;align-items:center;gap:.7rem}
+  .risingstar p{margin-top:1rem;font-size:1rem;line-height:1.5;color:#333}
+  .quote{font-size:clamp(1.3rem,3.4vw,2.2rem);line-height:1.15;text-transform:uppercase;font-weight:600;letter-spacing:-0.03em;max-width:16ch}
+
+  /* Final CTA */
+  .finalcta{background:var(--u);color:#000}
+  .finalcta .sign{background:#000;color:#fff}
+  .finalcta h2{font-size:clamp(2rem,6vw,4.5rem);line-height:.95;margin-top:1rem;max-width:16ch}
+  .finalcta .lead{margin-top:1.1rem;font-size:clamp(1rem,1.8vw,1.3rem);max-width:48ch;line-height:1.4;color:#151515}
+  .finalcta .row{margin-top:1.6rem;display:flex;flex-wrap:wrap;gap:.7rem}
+  .finalcta .info{margin-top:1.6rem;font-size:.82rem;text-transform:uppercase;letter-spacing:.03em;color:#2a2a2a;display:flex;flex-wrap:wrap;gap:1.2rem}
+  .finalcta .btn--dark{background:#000;color:#fff}
+  .finalcta .btn--dark:hover{background:#1a1a1c}
+  .finalcta .btn--outline{border-color:#000;color:#000}
+  .finalcta .btn--outline:hover{background:#000;color:#fff}
+
+  /* Footer signage */
+  footer{background:var(--ink);color:#fff}
+  .foot{display:grid;gap:1.6rem;padding-top:clamp(2.4rem,5vw,4rem);padding-bottom:2rem}
+  @media(min-width:800px){.foot{grid-template-columns:1.4fr 1fr 1fr}}
+  .foot h4{font-size:.78rem;letter-spacing:.06em;color:#8a8a8c;margin-bottom:.8rem}
+  .foot a{color:#e5e5e5;text-decoration:none;display:block;padding:.2rem 0;font-size:.9rem}
+  .foot a:hover{color:#fff;text-decoration:underline}
+  .foot .brandline{display:flex;align-items:center;gap:.55rem;font-size:1.15rem;font-weight:600;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:.8rem}
+  .foot .tag{font-size:.88rem;color:#bdbdbd;max-width:34ch;text-transform:none;letter-spacing:0}
+  .foot .hashes{margin-top:1rem;display:flex;gap:.7rem;flex-wrap:wrap;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:#8a8a8c}
+  .footbottom{border-top:1px solid #333;padding:1rem 0;font-size:.74rem;color:#7a7a7c;display:flex;flex-wrap:wrap;gap:.6rem;justify-content:space-between}
+
+  /* Reveal on scroll */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  /* Concept tag */
+  .concept-tag{
+    position:fixed;left:.7rem;bottom:.7rem;z-index:130;
+    background:var(--ink);color:#fff;font-size:.66rem;font-weight:600;
+    text-transform:uppercase;letter-spacing:.04em;padding:.4rem .6rem;
+    display:inline-flex;align-items:center;gap:.45rem;pointer-events:none;
+  }
+  .concept-tag .d{width:.5rem;height:.5rem;border-radius:50%;background:var(--u)}
+
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+  @media (prefers-reduced-motion: reduce){
+    .anim .route{animation:none;stroke-dashoffset:0}
+    .anim .stop,.anim .stop-lbl{animation:none;opacity:1}
+    .reveal{transition:none;opacity:1;transform:none}
+    *{scroll-behavior:auto !important}
+  }
+</style>
+
+<a class="skip" href="#main">Naar hoofdinhoud</a>
+
+<!-- ========================================================================
+     TOP BAR
+     ==================================================================== -->
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Hypnosis Dance Academy — home">
+      <span class="bullet" data-line="U" aria-hidden="true"><span>H</span></span>
+      Hypnosis
+    </a>
+    <nav class="topnav" aria-label="Hoofdnavigatie">
+      <a href="#lijnen">Vind jouw lijn</a>
+      <a href="#tempo">Fun vs Challenge</a>
+      <a href="#basecamp">BASECAMP</a>
+      <a href="#bewijs">Bewijs</a>
+      <a href="#iedereen">Iedereen</a>
+      <a class="btn btn--y" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrow">&rarr;</span></a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <a id="top"></a>
+
+  <!-- ======================================================================
+       1 · HERO + LIVING MAP
+       ================================================================== -->
+  <section class="hero">
+    <div class="wrap hero__grid">
+      <div class="hero__copy">
+        <span class="hero__kicker"><span class="dot" aria-hidden="true"></span>Talentontwikkeling · Roeselare</span>
+        <h1 class="hero__title">Get your <span class="u">talent</span> on track!</h1>
+        <p class="hero__sub">Elke dansstijl is een lijn. Elke les een halte. Jouw groei is een route door het netwerk. Van kleuter tot volwassene, recreatief tot internationaal wedstrijdniveau &mdash; stap op waar jij wil.</p>
+        <div class="hero__cta">
+          <a class="btn btn--ink btn--big" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrow">&rarr;</span></a>
+          <a class="btn btn--ghost btn--big" style="border-color:var(--ink);color:var(--ink)" href="#tempo">Gratis proefles <span class="arrow">&rarr;</span></a>
+        </div>
+      </div>
+
+      <div class="hero__map">
+        <figure class="mapframe" style="margin:0">
+          <div class="mapframe__bar">
+            <span class="mapframe__title">Het netwerk &mdash; kies je lijn</span>
+            <span class="mapframe__hint" id="map-hint">Tik een lijn aan</span>
+          </div>
+
+          <!-- Living transit map. Vignelli geometry: 45/90 turns only.
+               pathLength="1" normalises the draw animation across all lines. -->
+          <svg class="map-svg" id="map" viewBox="0 0 620 460" role="group"
+               aria-label="Interactieve metrokaart van dansstijlen. Kies een lijn voor meer info.">
+            <title>Dansstijlen-netwerk van Hypnosis Dance Academy</title>
+
+            <!-- ROUTES (drawn, coloured) -->
+            <!-- U · Urban -->
+            <path class="route U" pathLength="1" style="animation-delay:0ms"
+                  d="M40 60 L200 60 L280 140 L280 300 L360 380 L560 380"/>
+            <!-- D · Disco -->
+            <path class="route D" pathLength="1" style="animation-delay:120ms"
+                  d="M40 120 L160 120 L240 200 L440 200 L520 280 L520 420"/>
+            <!-- M · Modern -->
+            <path class="route M" pathLength="1" style="animation-delay:240ms"
+                  d="M40 200 L200 200 L280 280 L440 280 L520 200 L580 200"/>
+            <!-- J · Jazz -->
+            <path class="route J" pathLength="1" style="animation-delay:360ms"
+                  d="M40 260 L120 260 L200 340 L340 340 L420 260 L580 260"/>
+            <!-- B · Ballet -->
+            <path class="route B" pathLength="1" style="animation-delay:480ms"
+                  d="M100 40 L100 160 L180 240 L180 400 L200 420 L520 420"/>
+            <!-- C · Clipdance -->
+            <path class="route C" pathLength="1" style="animation-delay:600ms"
+                  d="M340 40 L340 120 L420 200 L420 320 L360 380"/>
+            <!-- G · G-Dans -->
+            <path class="route G" pathLength="1" style="animation-delay:720ms"
+                  d="M580 60 L460 60 L380 140 L380 260"/>
+            <!-- Mu · Musical -->
+            <path class="route Mu" pathLength="1" style="animation-delay:840ms"
+                  d="M40 340 L100 340 L160 400 L360 400"/>
+
+            <!-- HIT LINES (invisible, interactive) -->
+            <g id="hitlines">
+              <path class="line-hit" data-line="U" tabindex="0" role="button" aria-label="Lijn U — Urban" d="M40 60 L200 60 L280 140 L280 300 L360 380 L560 380"/>
+              <path class="line-hit" data-line="D" tabindex="0" role="button" aria-label="Lijn D — Disco" d="M40 120 L160 120 L240 200 L440 200 L520 280 L520 420"/>
+              <path class="line-hit" data-line="M" tabindex="0" role="button" aria-label="Lijn M — Modern" d="M40 200 L200 200 L280 280 L440 280 L520 200 L580 200"/>
+              <path class="line-hit" data-line="J" tabindex="0" role="button" aria-label="Lijn J — Jazz" d="M40 260 L120 260 L200 340 L340 340 L420 260 L580 260"/>
+              <path class="line-hit" data-line="B" tabindex="0" role="button" aria-label="Lijn B — Ballet" d="M100 40 L100 160 L180 240 L180 400 L200 420 L520 420"/>
+              <path class="line-hit" data-line="C" tabindex="0" role="button" aria-label="Lijn C — Clipdance" d="M340 40 L340 120 L420 200 L420 320 L360 380"/>
+              <path class="line-hit" data-line="G" tabindex="0" role="button" aria-label="Lijn G — G-Dans" d="M580 60 L460 60 L380 140 L380 260"/>
+              <path class="line-hit" data-line="Mu" tabindex="0" role="button" aria-label="Lijn Mu — Musical" d="M40 340 L100 340 L160 400 L360 400"/>
+            </g>
+
+            <!-- STATIONS -->
+            <!-- Local stops (circles = Fun), Express stops (diamonds = Challenge) -->
+            <g id="stations">
+              <!-- U line stations -->
+              <circle class="stop stop-local" data-of="U" cx="200" cy="60" r="6"/>
+              <rect    class="stop stop-express" data-of="U" x="274" y="134" width="12" height="12" transform="rotate(45 280 140)"/>
+              <circle class="stop stop-local" data-of="U" cx="280" cy="300" r="6"/>
+              <!-- D line -->
+              <circle class="stop stop-local" data-of="D" cx="160" cy="120" r="6"/>
+              <rect    class="stop stop-express" data-of="D" x="434" y="194" width="12" height="12" transform="rotate(45 440 200)"/>
+              <circle class="stop stop-local" data-of="D" cx="520" cy="280" r="6"/>
+              <!-- M line -->
+              <circle class="stop stop-local" data-of="M" cx="200" cy="200" r="6"/>
+              <rect    class="stop stop-express" data-of="M" x="434" y="274" width="12" height="12" transform="rotate(45 440 280)"/>
+              <!-- J line -->
+              <circle class="stop stop-local" data-of="J" cx="340" cy="340" r="6"/>
+              <rect    class="stop stop-express" data-of="J" x="414" y="254" width="12" height="12" transform="rotate(45 420 260)"/>
+              <!-- B line -->
+              <circle class="stop stop-local" data-of="B" cx="100" cy="160" r="6"/>
+              <rect    class="stop stop-express" data-of="B" x="174" y="234" width="12" height="12" transform="rotate(45 180 240)"/>
+              <!-- C line -->
+              <circle class="stop stop-local" data-of="C" cx="340" cy="120" r="6"/>
+              <!-- G line -->
+              <circle class="stop stop-local" data-of="G" cx="380" cy="140" r="6"/>
+              <!-- Mu line -->
+              <circle class="stop stop-local" data-of="Mu" cx="160" cy="400" r="6"/>
+
+              <!-- BASECAMP interchange (capsule bridging lines at the core) -->
+              <rect class="stop" data-of="core" x="266" y="266" width="28" height="28" rx="14" fill="#fff" stroke="#1a1a1c" stroke-width="3.5"/>
+              <text class="stop-lbl" data-of="core" x="280" y="252" text-anchor="middle" font-weight="600">BASECAMP</text>
+            </g>
+          </svg>
+
+          <div class="maplegenda" aria-hidden="true">
+            <span><svg class="glyph" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="#fff" stroke="#1a1a1c" stroke-width="2.5"/></svg> Local &mdash; Fun</span>
+            <span><svg class="glyph" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" transform="rotate(45 8 8)" fill="#fff" stroke="#1a1a1c" stroke-width="2.5"/></svg> Express &mdash; Challenge</span>
+            <span><svg class="glyph" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="3" fill="#fff" stroke="#1a1a1c" stroke-width="2.5"/></svg> Overstap</span>
+          </div>
+
+          <!-- Line list / legend (also the mobile-friendly control) -->
+          <div class="legend" id="legend" role="group" aria-label="Lijnen"></div>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       2 · FUN vs CHALLENGE — Local vs Express
+       ================================================================== -->
+  <section class="band" id="tempo">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="sign"><span class="bullet sm" data-line="M" aria-hidden="true"><span>M</span></span>Fun of Challenge</span>
+        <p class="sec-intro">Wij zijn de grondlegger van dit idee. Twee treinen op hetzelfde net: de <strong>Local</strong> stopt overal &mdash; plezier, ontspanning, samen. De <strong>Express</strong> gaat voor techniek, ambitie, groei. <strong>Jij kiest je tempo.</strong></p>
+      </div>
+
+      <div class="fcgrid">
+        <article class="fccard fccard--fun reveal">
+          <h3>
+            <svg class="glyph" width="34" height="34" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="#fff" stroke="#374b9a" stroke-width="3"/></svg>
+            Fun &mdash; Local
+          </h3>
+          <p class="tag">Local stop &middot; cirkel &middot; stopt overal</p>
+          <p>Dansen om het dansen. Plezier, ontspanning en een sociale groep waar je thuiskomt. Geen druk &mdash; wel groei op jouw ritme.</p>
+          <ul>
+            <li><svg class="glyph" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="#fff" stroke="#374b9a" stroke-width="2.5"/></svg> Plezier &amp; ontspanning voorop</li>
+            <li><svg class="glyph" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="#fff" stroke="#374b9a" stroke-width="2.5"/></svg> Sociaal, in kleine groepen</li>
+            <li><svg class="glyph" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="#fff" stroke="#374b9a" stroke-width="2.5"/></svg> Van kleuter tot volwassene</li>
+          </ul>
+        </article>
+
+        <article class="fccard fccard--chal reveal">
+          <h3>
+            <svg class="glyph" width="34" height="34" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" transform="rotate(45 8 8)" fill="#fff" stroke="#ec6427" stroke-width="3"/></svg>
+            Challenge &mdash; Express
+          </h3>
+          <p class="tag">Express stop &middot; ruit &middot; recht op je doel</p>
+          <p>Techniek, discipline en ambitie. Voor wie verder wil &mdash; richting podium, wedstrijd of internationaal niveau. Individuele begeleiding, want groepen blijven klein.</p>
+          <ul>
+            <li><svg class="glyph" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" transform="rotate(45 8 8)" fill="#fff" stroke="#ec6427" stroke-width="2.5"/></svg> Techniek &amp; groei centraal</li>
+            <li><svg class="glyph" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" transform="rotate(45 8 8)" fill="#fff" stroke="#ec6427" stroke-width="2.5"/></svg> 17 wedstrijdteams &amp; Star Entertainer</li>
+            <li><svg class="glyph" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" transform="rotate(45 8 8)" fill="#fff" stroke="#ec6427" stroke-width="2.5"/></svg> Max 28 dansers per cursus</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       3 · VIND JOUW LIJN — de stijlen / line index
+       ================================================================== -->
+  <section class="band band--ink" id="lijnen" style="padding-top:clamp(2.6rem,6vw,5rem)">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="sign"><span class="bullet sm" data-line="U" aria-hidden="true"><span>U</span></span>Vind jouw lijn</span>
+        <p class="sec-intro" style="color:#dcdcdc">18 stijlen, elk een eigen lijn op het net. Kies een halte en ontdek waar ze je brengt. Ontdekken is de eerste stap van inschrijven.</p>
+      </div>
+      <div class="lineidx reveal" id="lineidx"></div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       4 · BASECAMP — home of the hypno's (station complex)
+       ================================================================== -->
+  <section class="band" id="basecamp">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="sign"><span class="bullet sm" data-line="C" aria-hidden="true"><span>B</span></span>BASECAMP &mdash; home of the hypno's</span>
+        <p class="sec-intro">Elk netwerk vertrekt vanuit een veilige thuishaven. BASECAMP is dat knooppunt: waar alle lijnen samenkomen, waar je opstapt en altijd terugkeert. <strong>Ons tweede thuis</strong> &mdash; CO&#8322;-neutraal, met zwevende dansvloeren en klimaatcontrole. De eerste in België.</p>
+      </div>
+
+      <div class="basecamp">
+        <div class="complex reveal">
+          <span style="text-transform:uppercase;font-size:.72rem;font-weight:600;letter-spacing:.06em;color:#777">Perrons &mdash; de zalen</span>
+          <div class="platforms">
+            <div class="platform broadway">
+              <span class="bullet sm" data-line="U" aria-hidden="true"><span>1</span></span>
+              <div><h4>Broadway</h4><p>De grootste zaal &mdash; lichtinstallatie &amp; 360&deg; geluid.</p></div>
+            </div>
+            <div class="platform bronx">
+              <span class="bullet sm" data-line="C" aria-hidden="true"><span>2</span></span>
+              <div><h4>The Bronx</h4><p>Urban &amp; hiphop &mdash; waar de crew begon.</p></div>
+            </div>
+            <div class="platform manhattan">
+              <span class="bullet sm" data-line="M" aria-hidden="true"><span>3</span></span>
+              <div><h4>Manhattan</h4><p>Klassiek &amp; ballet &mdash; met barres.</p></div>
+            </div>
+          </div>
+
+          <span style="display:block;margin-top:1.2rem;text-transform:uppercase;font-size:.72rem;font-weight:600;letter-spacing:.06em;color:#777">Aansluitende haltes &mdash; faciliteiten</span>
+          <div class="amenities">
+            <span class="chip"><span class="d"></span>Central Park &mdash; bar, 90+ plaatsen</span>
+            <span class="chip"><span class="d"></span>Fifth Avenue &mdash; kledingshop</span>
+            <span class="chip"><span class="d"></span>The Printing House &mdash; fitness</span>
+            <span class="chip"><span class="d"></span>Columbia &mdash; studeerlounge</span>
+            <span class="chip"><span class="d"></span>Kleedkamers &amp; douches</span>
+            <span class="chip"><span class="d"></span>Privé-parking</span>
+            <span class="chip"><span class="d"></span>Warme maaltijden</span>
+          </div>
+        </div>
+
+        <figure class="photo reveal" style="margin:0">
+          <svg viewBox="0 0 300 300" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <pattern id="diag" width="18" height="18" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="0" x2="0" y2="18" stroke="#2c2c2f" stroke-width="7"/>
+              </pattern>
+            </defs>
+            <rect width="300" height="300" fill="#1a1a1c"/>
+            <rect width="300" height="300" fill="url(#diag)"/>
+          </svg>
+          <figcaption>foto &mdash; Broadway tijdens een repetitie</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       5 · BEWIJS — terminus / proof
+       ================================================================== -->
+  <section class="band band--ink" id="bewijs">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="sign"><span class="bullet sm" data-line="D" aria-hidden="true"><span>D</span></span>Bewijs &mdash; eindstation</span>
+        <p class="sec-intro" style="color:#dcdcdc">Waar sommige routes toe leiden. Niet om op te scheppen &mdash; wel omdat het toont wat er groeit als je de tijd neemt. <strong>Hier groeit niet alleen een sterke danser, maar ook een sterk persoon.</strong></p>
+      </div>
+
+      <div class="stats reveal">
+        <div class="stat"><div class="n">~1000</div><div class="l">dansers</div></div>
+        <div class="stat"><div class="n">11</div><div class="l">jaar &mdash; sinds 2015</div></div>
+        <div class="stat"><div class="n">30+</div><div class="l">gediplomeerde docenten</div></div>
+        <div class="stat"><div class="n">17</div><div class="l">wedstrijdteams</div></div>
+      </div>
+
+      <div class="titles reveal">
+        <span class="chip"><span class="d"></span>Wereldkampioen Disco 2025</span>
+        <span class="chip"><span class="d"></span>Europees kampioen Disco 2025</span>
+        <span class="chip"><span class="d"></span>Vice-EK Hiphop 2026</span>
+        <span class="chip"><span class="d"></span>Belgisch &amp; Vlaams kampioen</span>
+        <span class="chip"><span class="d"></span>Jeugdsportploeg van het jaar 2025</span>
+      </div>
+
+      <p class="refs reveal">Onze dansers stonden op het podium voor <strong>#LikeMe</strong>, de Halloween- &amp; Kerstshows van <strong>Bellewaerde</strong>, kerstparades in België en Frankrijk, en waren te zien bij Belgium&rsquo;s Got Talent, The Greatest Dancer, MNM en Rode Neuzendag (VTM).</p>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       6 · IEDEREEN HOORT ERBIJ — inclusie
+       ================================================================== -->
+  <section class="band" id="iedereen">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="sign"><span class="bullet sm" data-line="G" aria-hidden="true"><span>G</span></span>Iedereen hoort erbij</span>
+      </div>
+
+      <div class="inclusion">
+        <blockquote class="quote reveal" style="margin:0">Niet iedereen hoeft op een podium te staan om een echte danser te zijn.</blockquote>
+
+        <div class="risingstar reveal">
+          <h3>
+            <svg class="glyph" width="30" height="30" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="#fff" stroke="#70b747" stroke-width="3"/></svg>
+            Magic &amp; Rising Stars
+          </h3>
+          <p>Dans voor mensen met een beperking, o.a. Down-syndroom &mdash; de enige in de regio. Een halte die op elke kaart hoort. Want bij Hypnosis geloven we dat dans voor iedereen moet zijn.</p>
+          <p style="font-weight:600;text-transform:uppercase;letter-spacing:-0.01em;color:var(--ink)">Wij zijn die vuurtoren in tijden van storm. De safe haven voor velen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       7 · CTA — inschrijven
+       ================================================================== -->
+  <section class="band finalcta">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="sign"><span class="bullet sm" data-line="U" aria-hidden="true"><span>&rarr;</span></span>Stap op</span>
+        <h2>Klaar om je talent on track te zetten?</h2>
+        <p class="lead">Seizoen 2026&ndash;2027 start op maandag 7 september 2026. Kom eerst gewoon eens proeven: <strong>gratis proeflessenweek van 7 tot 12 september 2026.</strong></p>
+        <div class="row">
+          <a class="btn btn--dark btn--big" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven &nbsp;<span class="arrow">&rarr;</span></a>
+          <a class="btn btn--outline btn--big" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Gratis proefles boeken <span class="arrow">&rarr;</span></a>
+        </div>
+        <div class="info">
+          <span>BASECAMP &mdash; Groenestraat 170B, Roeselare</span>
+          <span>28 lessen per seizoen &middot; max 28 per cursus</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ========================================================================
+     FOOTER — signage style
+     ==================================================================== -->
+<footer>
+  <div class="wrap foot">
+    <div>
+      <div class="brandline">
+        <span class="bullet sm" data-line="U" aria-hidden="true"><span>H</span></span>
+        Hypnosis Dance Academy
+      </div>
+      <p class="tag">Home of the hypno&rsquo;s. Hier ontstaan vriendschappen voor het leven. Get your talent on track.</p>
+      <div class="hashes"><span>#homeofthehypnos</span><span>#TheOnlyWayIsUp</span></div>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <a href="mailto:info@hdac.be">info@hdac.be</a>
+      <a href="tel:+32486414404">0486 414 404</a>
+      <a href="https://maps.google.com/?q=Broeder+Adolfsstraat+3+8800+Roeselare">Broeder Adolfsstraat 3, 8800 Roeselare</a>
+      <a href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven &rarr;</a>
+    </div>
+    <div>
+      <h4>Volg de lijn</h4>
+      <a href="#">Facebook</a>
+      <a href="#">Instagram</a>
+      <a href="#">TikTok</a>
+      <a href="#">YouTube</a>
+    </div>
+  </div>
+  <div class="wrap footbottom">
+    <span>&copy; 2026 Hypnosis Dance Academy vzw &mdash; Roeselare</span>
+    <span>Ideatie-prototype &mdash; niet de finale site</span>
+  </div>
+</footer>
+
+<div class="concept-tag" aria-hidden="true"><span class="d"></span>Concept A &middot; The Living Map</div>
+
+<!-- ========================================================================
+     LINE DETAIL PANEL
+     ==================================================================== -->
+<div class="panel-scrim" id="scrim" hidden></div>
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-ttl" hidden>
+  <div class="panel__top">
+    <div class="panel__row">
+      <span class="bullet lg" id="panel-bullet" data-line="U" aria-hidden="true"><span>U</span></span>
+      <span class="panel__ttl" id="panel-ttl">Urban</span>
+      <button class="panel__close" id="panel-close" aria-label="Sluiten">&times;</button>
+    </div>
+  </div>
+  <div class="panel__body">
+    <p class="panel__lead" id="panel-lead"></p>
+
+    <div class="fc">
+      <div class="fc__cell">
+        <h4><svg class="fc__glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5" fill="#fff" stroke="#374b9a" stroke-width="2.5"/></svg>Fun &middot; Local</h4>
+        <p id="panel-fun"></p>
+      </div>
+      <div class="fc__cell">
+        <h4><svg class="fc__glyph" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" transform="rotate(45 8 8)" fill="#fff" stroke="#ec6427" stroke-width="2.5"/></svg>Challenge &middot; Express</h4>
+        <p id="panel-chal"></p>
+      </div>
+    </div>
+
+    <div style="margin-top:1.3rem">
+      <div class="metaline"><strong>Leeftijd</strong><span id="panel-age"></span></div>
+      <div class="metaline"><strong>Zaal</strong><span id="panel-room"></span></div>
+      <div class="metaline"><strong>Halte</strong><span id="panel-stop"></span></div>
+    </div>
+
+    <a class="btn btn--y btn--big panel__cta" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw" style="width:100%;justify-content:center">Inschrijven voor deze lijn <span class="arrow">&rarr;</span></a>
+  </div>
+</aside>
+
+<script>
+/* ==========================================================================
+   THE LIVING MAP — controller
+   Vanilla JS only. Drives the draw-in animation, line highlighting,
+   the detail panel, the legend + line index, and scroll reveals.
+   ========================================================================== */
+(function(){
+  "use strict";
+
+  var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* --- Line data model ------------------------------------------------- */
+  var LINES = {
+    U:  {name:"Urban",       age:"6 j. – volwassen", room:"The Bronx",  fun:"Grooves, freestyle en energie in groep — pure danslol.", chal:"Battle-ready techniek richting hiphopteams en podium.", stop:"local"},
+    D:  {name:"Disco",       age:"5 j. – volwassen", room:"Broadway",   fun:"Sprankelende choreo’s, glitter en plezier voor iedereen.", chal:"Ons paradepaardje — wereld- en Europees kampioen 2025.", stop:"express"},
+    M:  {name:"Modern",      age:"8 j. – volwassen", room:"Manhattan",  fun:"Expressie en beweging, luisteren naar je lichaam.", chal:"Verfijnde techniek en podiumwerk op hoog niveau.", stop:"express"},
+    J:  {name:"Jazz",        age:"7 j. – volwassen", room:"Broadway",   fun:"Ritme, stijl en showdans in een warme groep.", chal:"Technische jazz richting wedstrijd en Star Entertainer.", stop:"express"},
+    B:  {name:"Ballet",      age:"5 j. – volwassen", room:"Manhattan",  fun:"De basis van alles — houding, gratie, discipline met plezier.", chal:"Klassieke techniek aan de barre, fundament voor elke danser.", stop:"express"},
+    C:  {name:"Clipdance",   age:"6 j. – 16 j.",     room:"The Bronx",  fun:"Dans mee met je favoriete videoclips.", chal:"Commercial en clip-niveau richting showoptredens.", stop:"local"},
+    G:  {name:"G-Dans",      age:"6 j. – volwassen", room:"Broadway",   fun:"Toegankelijke groepsdans — samen bewegen, samen groeien.", chal:"Doorstroom naar teams en wedstrijden.", stop:"local"},
+    T:  {name:"Tricks",      age:"8 j. – volwassen", room:"The Bronx",  fun:"Acro, sprongen en flips — spectaculair en veilig opgebouwd.", chal:"Tricks als wapen voor je wedstrijdchoreo’s.", stop:"express"},
+    K:  {name:"Kleuterdans", age:"3 j. – 6 j.",      room:"Broadway",   fun:"De allereerste stapjes — dansen, spelen, ontdekken.", chal:"— Kleuters dansen altijd op Local-tempo.", stop:"local"},
+    F:  {name:"Fitness",     age:"volwassenen",           room:"Printing House", fun:"Bewegen op muziek met een beurtenkaart, jouw ritme.", chal:"Boutique fitness — gratis voor wedstrijddansers.", stop:"local"},
+    Mu: {name:"Musical",     age:"8 j. – volwassen", room:"Broadway",   fun:"Zingen, spelen en dansen — de volledige show.", chal:"Musicaltechniek voor podium en productie.", stop:"express"}
+  };
+  var ORDER = ["U","D","M","J","B","C","G","T","K","F","Mu"];
+
+  /* Full 18-style roster for the line index (extra = branch stops) */
+  var ROSTER = [
+    {n:"Urban",       l:"U"},  {n:"Disco",     l:"D"}, {n:"Modern",   l:"M"},
+    {n:"Jazz",        l:"J"},  {n:"Ballet",    l:"B"}, {n:"Clipdance",l:"C"},
+    {n:"G-Dans",      l:"G"},  {n:"Tricks",    l:"T"}, {n:"Kleuterdans",l:"K"},
+    {n:"Fitness",     l:"F"},  {n:"Musical",   l:"Mu"},
+    {n:"Breakdance",  l:"U"},  {n:"Commercial",l:"C"}, {n:"Heels",    l:"D"},
+    {n:"Koppeldans",  l:"J"},  {n:"Latin",     l:"D"}, {n:"Paaldansen",l:"F"},
+    {n:"Stretching",  l:"M"}
+  ];
+  var ROOM_BY_LINE = {U:"The Bronx",D:"Broadway",M:"Manhattan",J:"Broadway",B:"Manhattan",C:"The Bronx",G:"Broadway",T:"The Bronx",K:"Broadway",F:"Printing House",Mu:"Broadway"};
+
+  var map    = document.getElementById("map");
+  var hint   = document.getElementById("map-hint");
+  var hitG   = document.getElementById("hitlines");
+  var routes = map.querySelectorAll(".route");
+  var stops  = map.querySelectorAll("[data-of]");
+
+  /* ---------------------------------------------------------------------
+     Draw-in animation (kicks in after first paint; static LCP preserved)
+     ------------------------------------------------------------------- */
+  function startDraw(){ map.classList.add("anim"); }
+  if(REDUCED){
+    map.classList.add("anim"); /* CSS reduced-motion rule renders final state */
+  } else {
+    /* defer so hero paints instantly, then animate */
+    requestAnimationFrame(function(){ requestAnimationFrame(startDraw); });
+  }
+
+  /* ---------------------------------------------------------------------
+     Highlight helpers
+     ------------------------------------------------------------------- */
+  function clearActive(){
+    map.classList.remove("has-active");
+    routes.forEach(function(r){ r.classList.remove("is-active"); });
+    stops.forEach(function(s){ s.classList.remove("is-active"); });
+    hint.textContent = "Tik een lijn aan";
+  }
+  function highlight(line){
+    map.classList.add("has-active");
+    routes.forEach(function(r){ r.classList.toggle("is-active", r.classList.contains(line)); });
+    stops.forEach(function(s){
+      var of = s.getAttribute("data-of");
+      s.classList.toggle("is-active", of === line || of === "core");
+    });
+    if(LINES[line]) hint.textContent = "Lijn " + line + " — " + LINES[line].name;
+    syncLegend(line);
+  }
+
+  /* ---------------------------------------------------------------------
+     Detail panel
+     ------------------------------------------------------------------- */
+  var panel  = document.getElementById("panel");
+  var scrim  = document.getElementById("scrim");
+  var pClose = document.getElementById("panel-close");
+  var lastFocus = null;
+
+  function openPanel(line){
+    var d = LINES[line];
+    if(!d) return;
+    document.getElementById("panel-bullet").setAttribute("data-line", line);
+    document.getElementById("panel-bullet").querySelector("span").textContent = line;
+    document.getElementById("panel-ttl").textContent = d.name;
+    document.getElementById("panel-lead").textContent =
+      "Lijn " + line + ". " + d.name + " op het Hypnosis-net — kies je tempo: Local (Fun) of Express (Challenge).";
+    document.getElementById("panel-fun").textContent  = d.fun;
+    document.getElementById("panel-chal").textContent = d.chal;
+    document.getElementById("panel-age").textContent  = d.age;
+    document.getElementById("panel-room").textContent = d.room;
+    document.getElementById("panel-stop").textContent =
+      d.stop === "express" ? "Express — ruit (Challenge)" : "Local — cirkel (Fun)";
+
+    lastFocus = document.activeElement;
+    scrim.hidden = false; panel.hidden = false;
+    /* allow layout before transitioning in */
+    requestAnimationFrame(function(){ scrim.classList.add("open"); panel.classList.add("open"); });
+    highlight(line);
+    pClose.focus();
+    document.addEventListener("keydown", onPanelKey);
+  }
+  function closePanel(){
+    scrim.classList.remove("open"); panel.classList.remove("open");
+    document.removeEventListener("keydown", onPanelKey);
+    var done = function(){
+      panel.hidden = true; scrim.hidden = true; panel.removeEventListener("transitionend", done);
+    };
+    if(REDUCED){ panel.hidden = true; scrim.hidden = true; }
+    else panel.addEventListener("transitionend", done);
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  function onPanelKey(e){
+    if(e.key === "Escape"){ closePanel(); return; }
+    if(e.key === "Tab"){
+      /* simple focus trap within the panel */
+      var f = panel.querySelectorAll('a[href],button:not([disabled]),[tabindex="0"]');
+      if(!f.length) return;
+      var first = f[0], last = f[f.length-1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  }
+  pClose.addEventListener("click", closePanel);
+  scrim.addEventListener("click", closePanel);
+
+  /* ---------------------------------------------------------------------
+     Wire the map hit-lines (hover / focus / click / keyboard)
+     ------------------------------------------------------------------- */
+  Array.prototype.forEach.call(hitG.querySelectorAll(".line-hit"), function(h){
+    var line = h.getAttribute("data-line");
+    h.addEventListener("mouseenter", function(){ if(!panel.classList.contains("open")) highlight(line); });
+    h.addEventListener("mouseleave", function(){ if(!panel.classList.contains("open")) clearActive(); });
+    h.addEventListener("focus", function(){ highlight(line); });
+    h.addEventListener("blur",  function(){ if(!panel.classList.contains("open")) clearActive(); });
+    h.addEventListener("click", function(){ openPanel(line); });
+    h.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openPanel(line); }
+    });
+  });
+
+  /* ---------------------------------------------------------------------
+     Legend (line list) — mobile-friendly control + hover mirror
+     ------------------------------------------------------------------- */
+  var legendEl = document.getElementById("legend");
+  ORDER.forEach(function(line){
+    var d = LINES[line];
+    var b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-pressed","false");
+    b.setAttribute("data-line", line);
+    b.innerHTML = '<span class="bullet" data-line="'+line+'" aria-hidden="true"><span>'+line+'</span></span>'+d.name;
+    b.addEventListener("mouseenter", function(){ if(!panel.classList.contains("open")) highlight(line); });
+    b.addEventListener("mouseleave", function(){ if(!panel.classList.contains("open")) clearActive(); });
+    b.addEventListener("focus", function(){ highlight(line); });
+    b.addEventListener("click", function(){ openPanel(line); });
+    legendEl.appendChild(b);
+  });
+  function syncLegend(line){
+    Array.prototype.forEach.call(legendEl.children, function(b){
+      b.setAttribute("aria-pressed", b.getAttribute("data-line") === line ? "true" : "false");
+    });
+  }
+
+  /* ---------------------------------------------------------------------
+     Line index (Vind jouw lijn) — full 18-style roster
+     ------------------------------------------------------------------- */
+  var idxEl = document.getElementById("lineidx");
+  ROSTER.forEach(function(s){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML =
+      '<span class="bullet" data-line="'+s.l+'" aria-hidden="true"><span>'+s.l+'</span></span>'+
+      '<span class="nm">'+s.n+'</span>'+
+      '<span class="rm">'+(ROOM_BY_LINE[s.l]||"")+'</span>'+
+      '<span class="arrow" aria-hidden="true">&rarr;</span>';
+    b.setAttribute("aria-label", s.n + " — open lijninfo");
+    b.addEventListener("click", function(){
+      /* map extra styles onto their flagship line */
+      openPanel(LINES[s.l] ? s.l : "U");
+    });
+    idxEl.appendChild(b);
+  });
+
+  /* ---------------------------------------------------------------------
+     Scroll reveals + map recontextualisation cue
+     ------------------------------------------------------------------- */
+  var reveals = document.querySelectorAll(".reveal");
+  if(REDUCED || !("IntersectionObserver" in window)){
+    reveals.forEach(function(el){ el.classList.add("in"); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    }, {threshold:0.12, rootMargin:"0px 0px -8% 0px"});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+})();
+</script>

@@ -1,0 +1,127 @@
+<!doctype html>
+<!--
+  Hypnosis Dance Academy — Redesign concept selector (ideation)
+  Three divergent homepage concepts, one shared design system.
+  Self-contained, dependency-free. Vignelli / NYC-subway design language.
+-->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypnosis — Redesign concepten</title>
+<meta name="description" content="Drie homepage-concepten voor de nieuwe Hypnosis Dance Academy — Get your talent on track.">
+<style>
+  :root{
+    --ink:#1a1a1c; --paper:#f4f4f4; --white:#fff;
+    --U:#fdd630; --D:#943f90; --M:#374b9a; --J:#00933c; --B:#ec6427;
+    --C:#c73f90; --G:#70b747; --T:#996633; --K:#a7a9ab; --F:#e73730; --Mu:#00add0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--ink);color:var(--paper);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    line-height:1.4;min-height:100vh;
+    padding:clamp(1.25rem,4vw,3.5rem);
+    display:flex;flex-direction:column;
+    overflow-x:hidden;
+  }
+  a{color:inherit}
+  .top{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:clamp(2rem,7vw,5rem)}
+  .bullet{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:2.1rem;height:2.1rem;border-radius:50%;
+    font-weight:600;font-size:1.05rem;color:#fff;flex:0 0 auto;
+  }
+  .bullet.blk{color:var(--ink)}
+  .wordmark{font-weight:700;letter-spacing:-.03em;font-size:1.15rem;text-transform:uppercase}
+  .wordmark span{opacity:.55;font-weight:500;text-transform:none;letter-spacing:0}
+  .lede{max-width:22ch;margin-bottom:.4rem}
+  h1{
+    font-weight:700;letter-spacing:-.035em;line-height:.95;text-transform:uppercase;
+    font-size:clamp(2.6rem,9vw,7rem);margin-bottom:1.1rem;
+  }
+  h1 .track{color:var(--U)}
+  .intro{max-width:56ch;color:#c9c9cc;font-size:clamp(1rem,1.6vw,1.2rem);margin-bottom:clamp(2.2rem,6vw,4rem)}
+  .rule{height:2px;background:#fff;opacity:.9;margin-bottom:2.5rem;max-width:100%}
+  .platforms{
+    display:grid;gap:1.1rem;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    margin-bottom:auto;
+  }
+  .platform{
+    display:flex;flex-direction:column;gap:1rem;
+    background:var(--paper);color:var(--ink);
+    text-decoration:none;padding:1.6rem 1.5rem 1.5rem;
+    border-radius:2px;min-height:15rem;position:relative;
+    transition:transform .18s ease;
+    outline-offset:4px;
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .platform:hover{transform:translateY(-6px)}
+  }
+  .platform:focus-visible{outline:3px solid var(--U)}
+  .platform .line{display:flex;align-items:center;gap:.6rem}
+  .platform .letter{
+    width:2.6rem;height:2.6rem;border-radius:50%;color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-weight:600;font-size:1.3rem;flex:0 0 auto;
+  }
+  .platform h2{font-size:1.5rem;letter-spacing:-.02em;text-transform:uppercase;line-height:1}
+  .platform .desc{font-size:.98rem;color:#3a3a3d;margin-top:-.2rem}
+  .platform .go{
+    margin-top:auto;display:inline-flex;align-items:center;gap:.5rem;
+    font-weight:700;text-transform:uppercase;letter-spacing:.02em;font-size:.9rem;
+  }
+  .platform .arrow{font-size:1.15rem;transition:transform .18s ease}
+  @media (prefers-reduced-motion:no-preference){
+    .platform:hover .arrow{transform:translateX(5px)}
+  }
+  .note{margin-top:clamp(2.5rem,7vw,4.5rem);color:#8a8a8e;font-size:.85rem;max-width:60ch}
+  .note strong{color:#c9c9cc;font-weight:500}
+  .foot{margin-top:1.4rem;color:#6a6a6e;font-size:.8rem;display:flex;gap:1.2rem;flex-wrap:wrap}
+</style>
+</head>
+<body>
+  <div class="top">
+    <span class="bullet blk" style="background:var(--U)">U</span>
+    <span class="bullet" style="background:var(--D)">D</span>
+    <span class="bullet" style="background:var(--M)">M</span>
+    <span class="wordmark">Hypnosis <span>Dance Academy</span></span>
+  </div>
+
+  <p class="lede"></p>
+  <h1>Get your <br>talent on <span class="track">track.</span></h1>
+  <p class="intro">Drie richtingen voor de nieuwe website — ééns metaforisch spoor, drie manieren om het te rijden. Kies een perron en verken het concept. Dit zijn ideatie-prototypes: de vorm en het verhaal, nog niet de definitieve inhoud.</p>
+
+  <div class="rule"></div>
+
+  <nav class="platforms" aria-label="Concepten">
+    <a class="platform" href="concept-a.html">
+      <span class="line"><span class="letter" style="background:var(--D)">A</span></span>
+      <h2>The Living Map</h2>
+      <p class="desc">De homepage ís een interactieve metrokaart. Verkennend, grafisch, gedurfd — je navigeert de school als een netwerk.</p>
+      <span class="go">Verken concept A <span class="arrow" aria-hidden="true">→</span></span>
+    </a>
+    <a class="platform" href="concept-b.html">
+      <span class="line"><span class="letter" style="background:var(--M)">B</span></span>
+      <h2>Ride the Line</h2>
+      <p class="desc">Eén spoor tekent zich uit terwijl je scrolt. Elk verhaalmoment is een halte. Filmisch, warm, storytelling-first.</p>
+      <span class="go">Verken concept B <span class="arrow" aria-hidden="true">→</span></span>
+    </a>
+    <a class="platform" href="concept-c.html">
+      <span class="line"><span class="letter blk" style="background:var(--U);color:var(--ink)">C</span></span>
+      <h2>The Departures Board</h2>
+      <p class="desc">Bewegwijzering en een live vertrektijden-bord. Helder, snel, conversiegericht — bruikbaar in 90 seconden.</p>
+      <span class="go">Verken concept C <span class="arrow" aria-hidden="true">→</span></span>
+    </a>
+  </nav>
+
+  <p class="note"><strong>Over deze concepten.</strong> Zelfstandige HTML-prototypes, gebouwd op één gedeeld designsysteem (Vignelli / NYC-subway, Helvetica, de echte Hypnosis-lijnkleuren). Fun = Local (cirkelhalte), Challenge = Express (ruithalte). Foto's zijn placeholders; echte beeld/video volgt. Inschrijven linkt naar het bestaande ledenbeheer.</p>
+  <div class="foot">
+    <span>Hypnosis Dance Academy — Roeselare</span>
+    <span>#homeofthehypnos</span>
+    <span>Ideatie · 2026</span>
+  </div>
+</body>
+</html>
