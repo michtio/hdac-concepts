@@ -1,0 +1,1411 @@
+<!--
+  ============================================================================
+  HYPNOSIS DANCE ACADEMY · Homepage ideation prototype (v2)
+  CONCEPT E · "BASECAMP TERMINAL" · the station environment you arrive in
+  ----------------------------------------------------------------------------
+  You have arrived at BASECAMP, home of the hypnos. The homepage is a beautiful
+  NYC subway STATION: authentic environmental signage, a tiled-wall aesthetic,
+  fat Vignelli lines, mosaic station-name tablets, and a live departures hall
+  board (Vertrektijden) for class discovery.
+
+  Structure:
+   - Arrival hall (hero): station-entrance signage, hanging directional signs,
+     HERO-GRADE photo as instant static LCP, framed "station screen" playing
+     the real showreel, and a big interactive Vignelli wall map.
+   - Vertrektijden departures board: the beating heart. Live NU/STRAKS rows
+     per room, Local (circle) / Express (diamond) markers, live clock, and a
+     "plan je route" filter. The enrolment on-ramp.
+   - Platforms (Broadway / The Bronx / Manhattan): mosaic station-name tablets,
+     real photos, tiled-wall aesthetic, what happens on each platform.
+   - Station directory (lines/styles), service record (proof / hall of fame),
+     home-of-the-hypnos beat, inclusion stop (Magic & Rising Stars), Inschrijven.
+
+  Tech (v2, from BRIEF-V2): self-contained .html, our CSS/JS inline. CDN over
+  https for GSAP + ScrollTrigger + DrawSVG + Lenis (jsDelivr). Real images from
+  MEDIA.md with srcset/sizes/alt, lazy below fold, hero photo fetchpriority=high;
+  real showreel by YouTube https URL. Instant static LCP (hero never animated in),
+  aspect-ratio reserves space (CLS ~0), transform/opacity only. prefers-reduced-
+  motion first-class. Fully accessible; the live board has a text equivalent.
+
+  Copy mixes English + Flemish-Dutch. No em dashes anywhere. Tagline stays English.
+  ============================================================================
+-->
+<!doctype html>
+<html lang="nl-BE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypnosis Dance Academy · Welcome to BASECAMP</title>
+<meta name="description" content="Ideatie-prototype. Concept E, BASECAMP Terminal. Je bent aangekomen bij BASECAMP, home of the hypnos. Vind jouw lijn op het vertrekbord.">
+
+<!-- Preconnect to the media + CDN origins for faster LCP -->
+<link rel="preconnect" href="https://d1ngj59m25pphk.cloudfront.net" crossorigin>
+<link rel="dns-prefetch" href="https://d1ngj59m25pphk.cloudfront.net">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://www.youtube.com">
+
+<!-- Preload the LCP hero photo so it paints as early as possible -->
+<link rel="preload" as="image" fetchpriority="high"
+      href="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzLzVEOTEzMkQ4LTk0NkMtNDFBNy1BODQ1LUI0QTc4M0Y3NzlCOS5KUEciLCAiZWRpdHMiOiB7ImpwZWciOiB7InF1YWxpdHkiOiA4NX0sICJyZXNpemUiOiB7IndpZHRoIjogMjAwMCwgImZpdCI6ICJpbnNpZGUifSwgInNoYXJwZW4iOiB0cnVlfX0=">
+
+<style>
+  /* =========================================================================
+     Design tokens
+     ========================================================================= */
+  :root{
+    --ink:#1a1a1c;
+    --paper:#f4f4f4;
+    --white:#ffffff;
+    --line-weak:#d7d7d9;
+    --dim:#c8c8ca;
+    --tile:#ececeb;         /* subway tile base */
+    --tile-line:#dcdcda;    /* grout line */
+
+    /* The line network (real Hypnosis palette) */
+    --u:#fdd630;  /* Urban   · black text */
+    --d:#943f90;  /* Disco   */
+    --m:#374b9a;  /* Modern  */
+    --j:#00933c;  /* Jazz    */
+    --b:#ec6427;  /* Ballet  */
+    --c:#c73f90;  /* Clipdance */
+    --g:#70b747;  /* G-Dans  */
+    --t:#996633;  /* Tricks  */
+    --k:#a7a9ab;  /* Kleuterdans · black text */
+    --f:#e73730;  /* Fitness */
+    --mu:#00add0; /* Musical */
+
+    --maxw:1240px;
+    --gutter:clamp(1rem, 4vw, 3rem);
+    --focus:#00add0;
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;scroll-padding-top:84px}
+  body{
+    margin:0;
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.5;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  img{max-width:100%;display:block}
+  a{color:inherit}
+  h1,h2,h3,h4{font-weight:600;letter-spacing:-0.03em;line-height:1.02;margin:0;text-transform:uppercase}
+  p{margin:0}
+
+  /* Visible focus everywhere (a11y) */
+  :focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+  a:focus-visible,button:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
+
+  /* Skip link */
+  .skip-link{
+    position:absolute;left:0;top:-120px;z-index:200;
+    background:var(--ink);color:#fff;padding:12px 20px;font-weight:600;
+    text-decoration:none;letter-spacing:-0.02em;
+  }
+  .skip-link:focus{top:0}
+
+  /* Screen-reader-only helper */
+  .visually-hidden{
+    position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
+
+  /* =========================================================================
+     The line-bullet (core atom)
+     ========================================================================= */
+  .bul{
+    display:inline-flex;align-items:center;justify-content:center;
+    border-radius:50%;color:#fff;font-weight:600;
+    letter-spacing:-0.04em;line-height:1;flex:none;
+    width:2.25rem;height:2.25rem;font-size:1.35rem;
+    transform:translateZ(0);
+  }
+  .bul>span{transform:translateY(-3%)}
+  .bul.sm{width:1.6rem;height:1.6rem;font-size:0.95rem}
+  .bul.lg{width:3.4rem;height:3.4rem;font-size:2rem}
+  .bul.xl{width:5rem;height:5rem;font-size:3rem}
+  .bul.u{background:var(--u);color:#000}
+  .bul.d{background:var(--d)}
+  .bul.m{background:var(--m)}
+  .bul.j{background:var(--j)}
+  .bul.b{background:var(--b)}
+  .bul.c{background:var(--c)}
+  .bul.g{background:var(--g)}
+  .bul.t{background:var(--t)}
+  .bul.k{background:var(--k);color:#000}
+  .bul.f{background:var(--f)}
+  .bul.mu{background:var(--mu)}
+
+  /* Directional arrow for wayfinding + CTAs */
+  .arrow{display:inline-block;transform:translateY(1px)}
+
+  /* Subway tile texture (grout grid), used on station surfaces */
+  .tiled{
+    background-color:var(--tile);
+    background-image:
+      linear-gradient(var(--tile-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--tile-line) 1px, transparent 1px);
+    background-size:44px 22px;
+    background-position:0 0;
+  }
+
+  /* Black station-sign plate (signage component) */
+  .plate{
+    display:inline-flex;align-items:center;gap:.7rem;
+    background:var(--ink);color:#fff;padding:.6rem 1.1rem;
+    text-transform:uppercase;letter-spacing:-0.02em;font-weight:600;
+    border-radius:6px;
+  }
+
+  /* =========================================================================
+     Top wayfinding bar (station header)
+     ========================================================================= */
+  .topbar{
+    position:sticky;top:0;z-index:100;
+    background:var(--ink);color:#fff;
+    border-bottom:3px solid var(--u);
+  }
+  .topbar__in{
+    max-width:var(--maxw);margin-inline:auto;padding:.55rem var(--gutter);
+    display:flex;align-items:center;gap:1rem;justify-content:space-between;
+  }
+  .brand{display:flex;align-items:center;gap:.6rem;text-decoration:none;color:#fff;font-weight:700;letter-spacing:-0.03em;text-transform:uppercase;font-size:1.05rem}
+  .topnav{display:none;gap:1.4rem;align-items:center}
+  .topnav a{text-decoration:none;color:#fff;text-transform:uppercase;font-size:.82rem;letter-spacing:0;font-weight:500;opacity:.85}
+  .topnav a:hover{opacity:1}
+  .topbar__cta{
+    display:inline-flex;align-items:center;gap:.4rem;
+    background:var(--u);color:#000;text-decoration:none;
+    padding:.5rem .9rem;border-radius:5px;font-weight:700;
+    text-transform:uppercase;font-size:.82rem;letter-spacing:-0.01em;
+  }
+  @media(min-width:900px){.topnav{display:flex}}
+
+  /* =========================================================================
+     Arrival hall (hero)
+     ========================================================================= */
+  .hall{position:relative;color:#fff;isolation:isolate;overflow:hidden}
+  .hall__media{position:absolute;inset:0;z-index:-2}
+  .hall__media img{width:100%;height:100%;object-fit:cover}
+  .hall__scrim{position:absolute;inset:0;z-index:-1;
+    background:
+      linear-gradient(180deg, rgba(12,12,14,.82) 0%, rgba(12,12,14,.42) 40%, rgba(12,12,14,.78) 100%);
+  }
+  .hall__in{
+    max-width:var(--maxw);margin-inline:auto;padding:2.4rem var(--gutter) 2.8rem;
+    min-height:min(92vh,860px);
+    display:flex;flex-direction:column;justify-content:space-between;gap:2rem;
+  }
+
+  /* Hanging directional signs row */
+  .hang{display:flex;flex-wrap:wrap;gap:.6rem}
+  .hang__sign{
+    display:inline-flex;align-items:center;gap:.55rem;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);
+    padding:.45rem .8rem;border-radius:5px;
+    text-transform:uppercase;font-size:.78rem;letter-spacing:0;font-weight:600;
+    backdrop-filter:saturate(120%);
+  }
+
+  /* Big station-entrance sign */
+  .entrance{
+    display:inline-flex;flex-direction:column;gap:.15rem;
+    background:var(--ink);border:2px solid #fff;border-radius:8px;
+    padding:.5rem .9rem;align-self:flex-start;
+    box-shadow:0 18px 50px rgba(0,0,0,.4);
+  }
+  .entrance small{font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;opacity:.7}
+  .entrance b{font-size:1.15rem;letter-spacing:-0.02em;text-transform:uppercase}
+
+  .hall__head{max-width:22ch}
+  .hall__eyebrow{
+    display:inline-flex;align-items:center;gap:.5rem;
+    font-size:.8rem;letter-spacing:.22em;text-transform:uppercase;opacity:.85;margin-bottom:.9rem;
+  }
+  .hall__title{font-size:clamp(2.75rem,9vw,7.5rem);letter-spacing:-0.045em}
+  .hall__title .nl{display:block;font-size:clamp(1.15rem,3.2vw,2rem);font-weight:500;letter-spacing:-0.02em;opacity:.92;text-transform:none;margin-top:.7rem;line-height:1.15}
+  .hall__sub{margin-top:1.1rem;font-size:clamp(1rem,1.6vw,1.2rem);max-width:40ch;font-weight:400;line-height:1.45;text-transform:none;opacity:.95}
+  .payoff{display:inline-block;margin-top:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:-0.02em;
+    font-size:clamp(1rem,2vw,1.4rem);border-bottom:3px solid var(--u);padding-bottom:.15rem}
+
+  .hall__cta{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.6rem}
+  .btn{
+    display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;
+    padding:.85rem 1.3rem;border-radius:6px;font-weight:700;
+    text-transform:uppercase;font-size:.9rem;letter-spacing:-0.01em;
+    min-height:44px;
+  }
+  .btn--primary{background:var(--u);color:#000}
+  .btn--ghost{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.55)}
+  .btn--ink{background:var(--ink);color:#fff}
+  .btn:hover{transform:translateY(-1px)}
+
+  /* Framed "station screen" video */
+  .hall__grid{display:grid;gap:1.6rem;grid-template-columns:1fr}
+  @media(min-width:980px){.hall__grid{grid-template-columns:1.1fr .9fr;align-items:end}}
+  .screen{
+    background:#0b0b0d;border:8px solid #000;border-radius:10px;
+    box-shadow:0 24px 60px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,255,255,.06);
+    overflow:hidden;position:relative;
+  }
+  .screen__bar{
+    display:flex;align-items:center;gap:.5rem;justify-content:space-between;
+    padding:.4rem .7rem;background:#000;color:#fff;font-size:.68rem;
+    text-transform:uppercase;letter-spacing:.14em;
+  }
+  .screen__live{display:inline-flex;align-items:center;gap:.4rem}
+  .screen__dot{width:8px;height:8px;border-radius:50%;background:var(--f)}
+  .screen__frame{position:relative;aspect-ratio:16/9;background:#000}
+  .screen__frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .screen__poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .screen__play{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.25);border:0;color:#fff;cursor:pointer;width:100%;
+  }
+  .screen__play span{
+    display:inline-flex;align-items:center;gap:.6rem;background:var(--ink);
+    color:#fff;padding:.7rem 1.1rem;border-radius:6px;font-weight:700;
+    text-transform:uppercase;font-size:.85rem;letter-spacing:-0.01em;
+  }
+  .screen__cap{padding:.55rem .7rem;background:#000;color:rgba(255,255,255,.7);font-size:.72rem}
+
+  /* =========================================================================
+     Section shell + station-sign header
+     ========================================================================= */
+  section{position:relative}
+  .band{padding:clamp(3.5rem,8vw,7rem) 0}
+  .band--ink{background:var(--ink);color:#fff}
+  .band--tiled{background:var(--tile)}
+  .sec-head{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-bottom:1.8rem}
+  .sec-sign{
+    display:inline-flex;align-items:center;gap:.7rem;background:var(--ink);color:#fff;
+    padding:.7rem 1.1rem;border-radius:6px;text-transform:uppercase;font-weight:600;
+    letter-spacing:-0.02em;font-size:clamp(1.05rem,2.4vw,1.5rem);
+  }
+  .band--ink .sec-sign{background:#fff;color:var(--ink)}
+  .sec-lead{max-width:52ch;font-size:clamp(1rem,1.5vw,1.15rem);opacity:.9;text-transform:none;font-weight:400}
+  .band--ink .sec-lead{opacity:.85}
+
+  /* =========================================================================
+     Interactive Vignelli wall map
+     ========================================================================= */
+  .wallmap{
+    background:var(--white);border:12px solid var(--ink);border-radius:12px;
+    box-shadow:0 30px 70px rgba(0,0,0,.28);overflow:hidden;
+  }
+  .wallmap__bar{
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+    background:var(--ink);color:#fff;padding:.7rem 1.1rem;
+    text-transform:uppercase;letter-spacing:-0.01em;font-weight:600;font-size:.9rem;
+  }
+  .wallmap__grid{display:grid;grid-template-columns:1fr;gap:0}
+  @media(min-width:960px){.wallmap__grid{grid-template-columns:1.4fr .9fr}}
+  .wallmap__svgwrap{position:relative;background:var(--white);padding:.5rem}
+  .mapsvg{width:100%;height:auto;display:block;aspect-ratio:16/11}
+  .mapsvg .route{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:16}
+  .mapsvg .stop{cursor:pointer}
+  .mapsvg .stop-hit{fill:transparent;cursor:pointer}
+  .mapsvg .stop-dot{fill:#fff;stroke-width:6}
+  .mapsvg .stop-dia{fill:#fff;stroke-width:6}
+  .mapsvg text.st{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;letter-spacing:-0.02em;fill:var(--ink)}
+  .mapsvg .stop.is-active .stop-dot,.mapsvg .stop.is-active .stop-dia{fill:#000}
+
+  /* Map detail panel (reveals the style with a real photo) */
+  .mapdetail{border-left:1px solid var(--line-weak);background:var(--paper);display:flex;flex-direction:column}
+  @media(max-width:959px){.mapdetail{border-left:0;border-top:1px solid var(--line-weak)}}
+  .mapdetail__media{aspect-ratio:4/3;background:var(--dim);position:relative;overflow:hidden}
+  .mapdetail__media img{width:100%;height:100%;object-fit:cover}
+  .mapdetail__body{padding:1.1rem 1.2rem 1.4rem}
+  .mapdetail__title{display:flex;align-items:center;gap:.6rem;font-size:1.25rem;text-transform:uppercase;letter-spacing:-0.03em}
+  .mapdetail__meta{margin-top:.35rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;opacity:.65}
+  .mapdetail__txt{margin-top:.7rem;font-size:.95rem;line-height:1.5}
+  .maplegend{display:flex;flex-wrap:wrap;gap:1rem;margin-top:1.1rem;font-size:.8rem}
+  .maplegend b{font-weight:700}
+  .leg{display:inline-flex;align-items:center;gap:.5rem}
+  .leg svg{flex:none}
+
+  /* =========================================================================
+     Vertrektijden departures board
+     ========================================================================= */
+  .board{
+    background:#0a0a0c;color:#fff;border-radius:12px;overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.35);
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .board__top{
+    display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;
+    padding:1rem 1.2rem;background:#000;border-bottom:2px solid var(--u);
+  }
+  .board__title{display:flex;align-items:center;gap:.7rem;text-transform:uppercase;font-weight:700;letter-spacing:-0.01em;font-size:1.1rem}
+  .board__clock{
+    font-variant-numeric:tabular-nums;font-weight:700;font-size:1.35rem;letter-spacing:.02em;
+    color:var(--u);
+  }
+  .board__filters{display:flex;flex-wrap:wrap;gap:.5rem;padding:.9rem 1.2rem;background:#111;border-bottom:1px solid rgba(255,255,255,.08)}
+  .board__filters label{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;display:block;margin-bottom:.25rem}
+  .filt{display:flex;flex-direction:column;min-width:130px;flex:1}
+  .filt select{
+    background:#000;color:#fff;border:1px solid rgba(255,255,255,.25);
+    border-radius:5px;padding:.55rem .6rem;font:inherit;font-size:.9rem;min-height:40px;
+  }
+  .filt select:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+  .board__group{padding:.4rem 0}
+  .board__room{
+    display:flex;align-items:center;gap:.6rem;padding:.7rem 1.2rem .5rem;
+    text-transform:uppercase;font-weight:700;letter-spacing:.04em;font-size:.85rem;
+    color:rgba(255,255,255,.7);
+  }
+  .board__row{
+    display:grid;grid-template-columns:64px 1fr auto;gap:.7rem;align-items:center;
+    padding:.7rem 1.2rem;border-top:1px solid rgba(255,255,255,.07);
+  }
+  .board__row[hidden]{display:none}
+  .flap{
+    display:inline-flex;align-items:center;justify-content:center;min-width:52px;
+    background:#000;border:1px solid rgba(255,255,255,.18);border-radius:4px;
+    padding:.2rem .3rem;font-variant-numeric:tabular-nums;font-weight:700;
+    letter-spacing:.06em;color:var(--u);font-size:.95rem;
+  }
+  .board__when{display:flex;flex-direction:column;gap:.15rem}
+  .board__class{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}
+  .board__class b{font-weight:600;letter-spacing:-0.01em;font-size:1rem;text-transform:uppercase}
+  .board__sub{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;opacity:.6}
+  .board__mode{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;opacity:.85}
+  .board__mode svg{flex:none}
+  .board__status{text-align:right;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em}
+  .board__status.nu{color:var(--g);font-weight:700}
+  .board__status.straks{color:rgba(255,255,255,.55)}
+  .board__empty{padding:1.4rem 1.2rem;text-align:center;opacity:.6;font-size:.9rem}
+  .board__foot{padding:1rem 1.2rem;background:#000;border-top:2px solid var(--u);display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;justify-content:space-between}
+
+  /* flap flip animation (only when not reduced-motion) */
+  .flap span{display:inline-block}
+
+  /* =========================================================================
+     Platforms (rooms) · mosaic tablets
+     ========================================================================= */
+  .platforms{display:grid;gap:2rem;grid-template-columns:1fr}
+  .platform{
+    background:var(--white);border-radius:12px;overflow:hidden;
+    box-shadow:0 18px 50px rgba(0,0,0,.14);display:grid;grid-template-columns:1fr;
+  }
+  @media(min-width:820px){.platform{grid-template-columns:1.05fr .95fr}
+    .platform:nth-child(even){grid-template-columns:.95fr 1.05fr}
+    .platform:nth-child(even) .platform__media{order:2}}
+  .platform__media{aspect-ratio:4/3;background:var(--dim);overflow:hidden;position:relative}
+  .platform__media img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+  .platform:hover .platform__media img{transform:scale(1.04)}
+  .platform__body{padding:clamp(1.4rem,3vw,2.4rem);display:flex;flex-direction:column;justify-content:center;gap:1rem}
+
+  /* Mosaic station-name tablet (tiled-letter name panel) */
+  .tablet{
+    display:inline-block;background:#fff;border:6px solid var(--ink);border-radius:10px;
+    padding:.5rem .7rem;
+  }
+  .tablet__name{
+    display:flex;gap:4px;flex-wrap:wrap;
+  }
+  .tablet__name .tl{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:clamp(24px,5vw,34px);height:clamp(30px,6vw,42px);
+    background:var(--ink);color:#fff;font-weight:700;font-size:clamp(1rem,3.4vw,1.5rem);
+    letter-spacing:-0.03em;border-radius:3px;
+    /* mosaic tile grout */
+    box-shadow:inset 0 0 0 2px #fff, inset 0 0 0 3px var(--ink);
+    text-transform:uppercase;
+  }
+  .tablet__name .tl.space{background:transparent;box-shadow:none;width:.5rem}
+  .platform__what{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
+  .platform__what li{display:flex;align-items:flex-start;gap:.6rem;font-size:.95rem;line-height:1.4}
+  .platform__what .arrow{color:var(--f);font-weight:700}
+  .platform__lines{display:flex;flex-wrap:wrap;gap:.4rem}
+
+  /* =========================================================================
+     Station directory (lines / styles board)
+     ========================================================================= */
+  .directory{
+    background:var(--ink);color:#fff;border-radius:12px;overflow:hidden;
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .directory__row{
+    display:flex;align-items:center;gap:1rem;padding:.85rem 1.2rem;
+    border-top:1px solid rgba(255,255,255,.09);text-decoration:none;color:#fff;
+  }
+  .directory__row:first-child{border-top:0}
+  .directory__row:hover,.directory__row:focus-visible{background:rgba(255,255,255,.06)}
+  .directory__name{font-weight:600;text-transform:uppercase;letter-spacing:-0.01em;font-size:1.05rem;flex:1}
+  .directory__meta{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;opacity:.6}
+  .directory__more{padding:1rem 1.2rem;font-size:.85rem;opacity:.7}
+
+  /* =========================================================================
+     Service record (proof / hall of fame)
+     ========================================================================= */
+  .stats{display:grid;gap:1px;grid-template-columns:repeat(2,1fr);background:rgba(255,255,255,.12);border-radius:10px;overflow:hidden;margin-bottom:2rem}
+  @media(min-width:760px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--ink);padding:1.4rem 1.1rem}
+  .stat b{display:block;font-size:clamp(1.8rem,5vw,3rem);letter-spacing:-0.04em;line-height:1}
+  .stat span{display:block;margin-top:.4rem;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;opacity:.75}
+  .fame{display:grid;gap:1rem;grid-template-columns:repeat(2,1fr)}
+  @media(min-width:760px){.fame{grid-template-columns:repeat(4,1fr)}}
+  .fame__cell{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;background:#111}
+  .fame__cell.wide{grid-column:span 2;aspect-ratio:16/10}
+  @media(max-width:759px){.fame__cell.wide{grid-column:span 2;aspect-ratio:16/10}}
+  .fame__cell img{width:100%;height:100%;object-fit:cover}
+  .fame__cap{
+    position:absolute;left:0;right:0;bottom:0;padding:.7rem .8rem;color:#fff;
+    background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.8));
+    font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;font-weight:600;
+  }
+
+  /* =========================================================================
+     Home of the hypnos (warmth beat)
+     ========================================================================= */
+  .home{display:grid;gap:2rem;grid-template-columns:1fr;align-items:center}
+  @media(min-width:900px){.home{grid-template-columns:1fr 1fr}}
+  .home__media{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+  .home__media figure{margin:0;border-radius:10px;overflow:hidden;background:var(--dim);aspect-ratio:3/4}
+  .home__media figure:first-child{aspect-ratio:3/4;transform:translateY(1.2rem)}
+  .home__media img{width:100%;height:100%;object-fit:cover}
+  .home__title{font-size:clamp(1.8rem,5vw,3.2rem)}
+  .home__title .nl{display:block;text-transform:none;font-weight:500;letter-spacing:-0.02em;font-size:clamp(1.1rem,2.6vw,1.6rem);margin-top:.6rem}
+  .home__quote{margin-top:1.2rem;font-size:clamp(1.05rem,2vw,1.35rem);line-height:1.4;font-weight:500;text-transform:none}
+  .home__quote span{border-bottom:3px solid var(--mu)}
+
+  /* =========================================================================
+     Inclusion stop
+     ========================================================================= */
+  .incl{
+    display:grid;gap:0;grid-template-columns:1fr;background:var(--white);
+    border-radius:12px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.14);
+  }
+  @media(min-width:820px){.incl{grid-template-columns:1fr 1fr}}
+  .incl__media{aspect-ratio:4/3;background:var(--dim);overflow:hidden}
+  .incl__media img{width:100%;height:100%;object-fit:cover}
+  .incl__body{padding:clamp(1.6rem,4vw,3rem);display:flex;flex-direction:column;justify-content:center;gap:1rem}
+  .incl__title{font-size:clamp(1.6rem,4vw,2.6rem)}
+
+  /* =========================================================================
+     Final CTA (Inschrijven)
+     ========================================================================= */
+  .final{background:var(--u);color:#000}
+  .final .wrap{display:grid;gap:2rem;grid-template-columns:1fr;align-items:center}
+  @media(min-width:860px){.final .wrap{grid-template-columns:1.3fr .7fr}}
+  .final__title{font-size:clamp(2rem,6vw,4.5rem);letter-spacing:-0.045em}
+  .final__title .nl{display:block;text-transform:none;font-weight:500;font-size:clamp(1.05rem,2.4vw,1.5rem);margin-top:.7rem}
+  .final__facts{display:grid;gap:.6rem}
+  .final__facts div{display:flex;align-items:flex-start;gap:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:-0.01em;font-size:.95rem}
+  .final__cta{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:.5rem}
+
+  /* =========================================================================
+     Footer (signage style)
+     ========================================================================= */
+  footer{background:var(--ink);color:#fff}
+  .foot{display:grid;gap:2rem;grid-template-columns:1fr;padding-block:clamp(2.5rem,6vw,4rem)}
+  @media(min-width:760px){.foot{grid-template-columns:1.4fr 1fr 1fr}}
+  .foot h3{font-size:1.1rem;margin-bottom:.9rem}
+  .foot a{color:#fff;text-decoration:none;opacity:.82}
+  .foot a:hover{opacity:1;text-decoration:underline}
+  .foot ul{list-style:none;margin:0;padding:0;display:grid;gap:.5rem;font-size:.92rem}
+  .foot__brand{display:flex;align-items:center;gap:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:-0.03em;font-size:1.25rem}
+  .foot__tag{margin-top:.9rem;opacity:.7;font-size:.9rem;max-width:34ch}
+  .foot__bottom{border-top:1px solid rgba(255,255,255,.12);padding-block:1.1rem;font-size:.78rem;opacity:.6;display:flex;flex-wrap:wrap;gap:.6rem;justify-content:space-between}
+
+  /* =========================================================================
+     Fixed concept tag + motion pause control
+     ========================================================================= */
+  .concept-tag{
+    position:fixed;right:.7rem;bottom:.7rem;z-index:150;
+    background:var(--ink);color:#fff;font-size:.68rem;font-weight:600;
+    text-transform:uppercase;letter-spacing:.06em;padding:.4rem .6rem;border-radius:5px;
+    border:1px solid rgba(255,255,255,.25);pointer-events:none;
+  }
+  .motion-toggle{
+    position:fixed;left:.7rem;bottom:.7rem;z-index:150;
+    background:var(--ink);color:#fff;border:1px solid rgba(255,255,255,.3);
+    font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+    padding:.5rem .7rem;border-radius:5px;cursor:pointer;min-height:36px;
+  }
+
+  /* =========================================================================
+     Reveal animation base (JS toggles .is-in). Reduced-motion = final state.
+     ========================================================================= */
+  .reveal{opacity:0;transform:translateY(18px)}
+  .reveal.is-in{opacity:1;transform:none;transition:opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1)}
+
+  @media (prefers-reduced-motion: reduce){
+    *{scroll-behavior:auto!important}
+    .reveal{opacity:1!important;transform:none!important;transition:none!important}
+    .platform:hover .platform__media img{transform:none}
+    .home__media figure:first-child{transform:none}
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Naar de hoofdinhoud</a>
+
+<!-- =========================================================================
+     Top wayfinding bar
+     ========================================================================= -->
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="brand" href="#top">
+      <span class="bul sm d" aria-hidden="true"><span>H</span></span>
+      Hypnosis
+    </a>
+    <nav class="topnav" aria-label="Hoofdnavigatie">
+      <a href="#vertrek">Vertrektijden</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#lijnen">Lijnen</a>
+      <a href="#bewijs">Palmares</a>
+      <a href="#home">Home of the hypnos</a>
+    </nav>
+    <a class="topbar__cta" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+      Inschrijven <span class="arrow" aria-hidden="true">&rarr;</span>
+    </a>
+  </div>
+</header>
+
+<main id="main">
+<span id="top"></span>
+
+<!-- =========================================================================
+     ARRIVAL HALL (hero)
+     ========================================================================= -->
+<section class="hall" aria-labelledby="hall-title">
+  <div class="hall__media" aria-hidden="true">
+    <!-- Instant static LCP: HERO-GRADE stage photo, blue light. Never animated in. -->
+    <img
+      src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzLzVEOTEzMkQ4LTk0NkMtNDFBNy1BODQ1LUI0QTc4M0Y3NzlCOS5KUEciLCAiZWRpdHMiOiB7ImpwZWciOiB7InF1YWxpdHkiOiA4NX0sICJyZXNpemUiOiB7IndpZHRoIjogMjAwMCwgImZpdCI6ICJpbnNpZGUifSwgInNoYXJwZW4iOiB0cnVlfX0="
+      alt="" width="2000" height="1333" fetchpriority="high" decoding="async">
+  </div>
+  <div class="hall__scrim" aria-hidden="true"></div>
+
+  <div class="hall__in">
+    <div>
+      <!-- Big station-entrance sign -->
+      <div class="entrance">
+        <small>Station</small>
+        <b>BASECAMP &middot; Groenestraat 170B</b>
+      </div>
+      <!-- Hanging directional signs -->
+      <div class="hang" style="margin-top:1rem" aria-hidden="true">
+        <span class="hang__sign"><span class="bul sm d"><span>D</span></span> Disco <span class="arrow">&rarr;</span></span>
+        <span class="hang__sign"><span class="bul sm u"><span>U</span></span> Urban <span class="arrow">&rarr;</span></span>
+        <span class="hang__sign"><span class="bul sm b"><span>B</span></span> Ballet <span class="arrow">&rarr;</span></span>
+        <span class="hang__sign">Vertrektijden <span class="arrow">&darr;</span></span>
+      </div>
+    </div>
+
+    <div class="hall__grid">
+      <div class="hall__head">
+        <p class="hall__eyebrow">You are here <span class="arrow" aria-hidden="true">&darr;</span> home of the hypnos</p>
+        <h1 class="hall__title" id="hall-title">
+          Welcome to BASECAMP
+          <span class="nl">Je bent aangekomen. Zet je tas neer, dit is jouw tweede thuis.</span>
+        </h1>
+        <p class="hall__sub">Van kleuter tot volwassene, van recreatief tot internationaal wedstrijdniveau. Kies je lijn, stap op, en rij naar jouw les.</p>
+        <span class="payoff">Get your talent on track!</span>
+        <div class="hall__cta">
+          <a class="btn btn--primary" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrow" aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn--ghost" href="#vertrek">Bekijk het vertrekbord <span class="arrow" aria-hidden="true">&darr;</span></a>
+        </div>
+      </div>
+
+      <!-- Framed station screen playing the real showreel -->
+      <figure class="screen" style="margin:0">
+        <div class="screen__bar">
+          <span class="screen__live"><span class="screen__dot" aria-hidden="true"></span> Op het perron</span>
+          <span>CH 01 &middot; Showreel</span>
+        </div>
+        <div class="screen__frame" id="screen-frame">
+          <!-- Poster paints instantly; YouTube loads on click / when in view (never blocks paint) -->
+          <img class="screen__poster" id="screen-poster"
+            src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzLzVEOTEzMkQ4LTk0NkMtNDFBNy1BODQ1LUI0QTc4M0Y3NzlCOS5KUEciLCAiZWRpdHMiOiB7ImpwZWciOiB7InF1YWxpdHkiOiA4NX0sICJyZXNpemUiOiB7IndpZHRoIjogMTI4MCwgImZpdCI6ICJpbnNpZGUifSwgInNoYXJwZW4iOiB0cnVlfX0="
+            alt="Dansers in actie, still uit de Hypnosis showreel." width="1280" height="853" loading="lazy" decoding="async">
+          <button class="screen__play" id="screen-play" type="button" aria-label="Speel de Hypnosis showreel af">
+            <span><span class="arrow" aria-hidden="true">&#9658;</span> Speel showreel</span>
+          </button>
+        </div>
+        <figcaption class="screen__cap">Live vanaf het perron: de Hypnosis showreel op de stationsschermen.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     VERTREKTIJDEN · departures board (the beating heart)
+     ========================================================================= -->
+<section class="band band--tiled tiled" id="vertrek" aria-labelledby="vertrek-title">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-sign" id="vertrek-title"><span class="bul sm f" aria-hidden="true"><span>F</span></span> Vertrektijden</span>
+      <p class="sec-lead">Elke les is een trein. <b>Local</b> (cirkel) rijdt op Fun, <b>Express</b> (ruit) rijdt op Challenge. Plan je route en land op jouw les.</p>
+    </div>
+
+    <div class="board reveal" id="board">
+      <div class="board__top">
+        <span class="board__title"><span class="bul sm mu" aria-hidden="true"><span>Mu</span></span> BASECAMP &middot; Departures</span>
+        <span class="board__clock" id="clock" role="timer" aria-label="Huidige tijd">--:--</span>
+      </div>
+
+      <!-- plan je route filter -->
+      <form class="board__filters" id="board-filters" aria-label="Plan je route">
+        <div class="filt">
+          <label for="f-style">Stijl</label>
+          <select id="f-style" name="style">
+            <option value="">Alle stijlen</option>
+            <option value="Urban">Urban</option>
+            <option value="Disco">Disco</option>
+            <option value="Modern">Modern</option>
+            <option value="Ballet">Ballet</option>
+            <option value="Jazz">Jazz</option>
+            <option value="Kleuterdans">Kleuterdans</option>
+            <option value="Clipdance">Clipdance</option>
+            <option value="Musical">Musical</option>
+          </select>
+        </div>
+        <div class="filt">
+          <label for="f-age">Leeftijd</label>
+          <select id="f-age" name="age">
+            <option value="">Alle leeftijden</option>
+            <option value="kleuter">Kleuter (3 tot 6)</option>
+            <option value="kind">Kind (6 tot 12)</option>
+            <option value="tiener">Tiener (12 tot 16)</option>
+            <option value="volwassen">Volwassen</option>
+          </select>
+        </div>
+        <div class="filt">
+          <label for="f-level">Niveau</label>
+          <select id="f-level" name="level">
+            <option value="">Fun of Challenge</option>
+            <option value="local">Local (Fun)</option>
+            <option value="express">Express (Challenge)</option>
+          </select>
+        </div>
+      </form>
+
+      <!-- Accessible text equivalent announced when the board is filtered -->
+      <p class="visually-hidden" id="board-status" role="status" aria-live="polite"></p>
+
+      <div id="board-body">
+        <!-- Rows injected by JS; a static, keyboard-readable list is written here as a fallback. -->
+      </div>
+
+      <div class="board__foot">
+        <span class="board__sub">Illustratieve lesuren, seizoen 2026 tot 2027.</span>
+        <a class="btn btn--primary" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Reserveer je plaats <span class="arrow" aria-hidden="true">&rarr;</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     THE WALL MAP · interactive Vignelli map mounted on the station wall
+     ========================================================================= -->
+<section class="band band--ink" id="lijnen" aria-labelledby="map-title">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-sign" id="map-title"><span class="bul sm m" aria-hidden="true"><span>M</span></span> Het lijnennet</span>
+      <p class="sec-lead">De volledige kaart hangt aan de wand van het station. Elke stijl is een lijn. Tik of hover een halte en zie waar die lijn je brengt.</p>
+    </div>
+
+    <div class="wallmap reveal">
+      <div class="wallmap__bar">
+        <span>Hypnosis Network Map <span style="opacity:.6">&middot; Roeselare</span></span>
+        <span style="opacity:.7;font-size:.78rem">Vignelli 1972 geometrie &middot; 45&deg;/90&deg;</span>
+      </div>
+      <div class="wallmap__grid">
+        <div class="wallmap__svgwrap">
+          <!-- Interactive map: fat lines (stroke 16 ~ 0.4x bullet), strict 45/90, authentic bullets -->
+          <svg class="mapsvg" viewBox="0 0 640 440" role="group" aria-label="Interactieve metrokaart van de dansstijlen">
+            <!-- Routes (fat, uniform weight, 45/90 turns only) -->
+            <path class="route" stroke="var(--d)"  d="M60 60 L60 200 L200 340 L520 340"/>
+            <path class="route" stroke="var(--u)"  d="M120 60 L120 160 L280 320 L580 320"/>
+            <path class="route" stroke="var(--m)"  d="M60 120 L360 120 L440 200 L440 380"/>
+            <path class="route" stroke="var(--b)"  d="M580 60 L360 60 L280 140 L280 300"/>
+            <path class="route" stroke="var(--j)"  d="M180 60 L180 240 L340 400 L560 400"/>
+            <path class="route" stroke="var(--mu)" d="M60 260 L160 260 L240 180 L500 180 L560 240"/>
+
+            <!-- Interchange capsule (visual, decorative) -->
+            <rect x="266" y="126" width="28" height="28" rx="14" fill="#fff" stroke="var(--ink)" stroke-width="4" transform="rotate(45 280 140)"/>
+
+            <!-- Stops: Local = circle, Express = diamond. Each is a keyboard-focusable button. -->
+            <g class="stop" data-key="d" tabindex="0" role="button" aria-label="Disco lijn, halte">
+              <circle class="stop-hit" cx="60" cy="60" r="20"/>
+              <circle class="stop-dot" cx="60" cy="60" r="10" stroke="var(--d)"/>
+              <text class="st" x="76" y="55">Disco</text>
+            </g>
+            <g class="stop" data-key="u" tabindex="0" role="button" aria-label="Urban lijn, halte">
+              <circle class="stop-hit" cx="120" cy="160" r="20"/>
+              <circle class="stop-dot" cx="120" cy="160" r="10" stroke="var(--u)"/>
+              <text class="st" x="136" y="155">Urban</text>
+            </g>
+            <g class="stop" data-key="m" tabindex="0" role="button" aria-label="Modern lijn, halte">
+              <rect class="stop-hit" x="420" y="160" width="40" height="40"/>
+              <rect class="stop-dia" x="428" y="188" width="24" height="24" transform="rotate(45 440 200)" stroke="var(--m)"/>
+              <text class="st" x="456" y="205">Modern</text>
+            </g>
+            <g class="stop" data-key="b" tabindex="0" role="button" aria-label="Ballet lijn, halte">
+              <circle class="stop-hit" cx="280" cy="300" r="20"/>
+              <circle class="stop-dot" cx="280" cy="300" r="10" stroke="var(--b)"/>
+              <text class="st" x="296" y="295">Ballet</text>
+            </g>
+            <g class="stop" data-key="j" tabindex="0" role="button" aria-label="Jazz lijn, halte">
+              <rect class="stop-hit" x="160" y="220" width="40" height="40"/>
+              <rect class="stop-dia" x="168" y="228" width="24" height="24" transform="rotate(45 180 240)" stroke="var(--j)"/>
+              <text class="st" x="196" y="245">Jazz</text>
+            </g>
+            <g class="stop" data-key="mu" tabindex="0" role="button" aria-label="Musical lijn, halte">
+              <circle class="stop-hit" cx="500" cy="180" r="20"/>
+              <circle class="stop-dot" cx="500" cy="180" r="10" stroke="var(--mu)"/>
+              <text class="st" x="470" y="170">Musical</text>
+            </g>
+          </svg>
+          <div class="maplegend" aria-hidden="true" style="padding:.4rem .8rem 1rem">
+            <span class="leg"><svg width="20" height="20"><circle cx="10" cy="10" r="7" fill="#fff" stroke="#1a1a1c" stroke-width="3"/></svg> <b>Local</b> = Fun</span>
+            <span class="leg"><svg width="20" height="20"><rect x="4" y="4" width="12" height="12" transform="rotate(45 10 10)" fill="#fff" stroke="#1a1a1c" stroke-width="3"/></svg> <b>Express</b> = Challenge</span>
+          </div>
+        </div>
+
+        <!-- Detail panel: reveals the selected style with a real photo -->
+        <div class="mapdetail" id="map-detail" aria-live="polite">
+          <div class="mapdetail__media">
+            <img id="md-img" src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzL0lNR18wMTkzLkpQRyIsICJlZGl0cyI6IHsianBlZyI6IHsicXVhbGl0eSI6IDg1fSwgInJlc2l6ZSI6IHsid2lkdGgiOiAxMjgwLCAiZml0IjogImluc2lkZSJ9LCAic2hhcnBlbiI6IHRydWV9fQ=="
+              alt="Dansers in actie op het podium." width="1280" height="853" loading="lazy" decoding="async">
+          </div>
+          <div class="mapdetail__body">
+            <h3 class="mapdetail__title" id="md-title"><span class="bul sm d" id="md-bul" aria-hidden="true"><span>D</span></span> Disco</h3>
+            <p class="mapdetail__meta" id="md-meta">Lijn D &middot; Local &amp; Express</p>
+            <p class="mapdetail__txt" id="md-txt">Onze paradepaardje. Meervoudig wereld- en Europees kampioen. Van de eerste passen tot het WK-podium: op de D-lijn groei je in jouw tempo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     PLATFORMS · the rooms as station environments (mosaic tablets)
+     ========================================================================= -->
+<section class="band band--tiled tiled" id="platforms" aria-labelledby="platforms-title">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-sign" id="platforms-title"><span class="bul sm b" aria-hidden="true"><span>B</span></span> De perrons</span>
+      <p class="sec-lead">Drie zalen, drie perrons. Elk met een eigen sfeer, eigen vloer, eigen verhaal. BASECAMP is CO2-neutraal, met zwevende dansvloeren en klimaatcontrole.</p>
+    </div>
+
+    <div class="platforms">
+      <!-- BROADWAY -->
+      <article class="platform reveal">
+        <div class="platform__media">
+          <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzL2JvdmVuLTkuanBnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDE0MDAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19"
+            alt="De studio op de bovenverdieping van BASECAMP, zaal Broadway." width="1400" height="933" loading="lazy" decoding="async">
+        </div>
+        <div class="platform__body">
+          <span class="tablet"><span class="tablet__name" aria-hidden="true">
+            <span class="tl">B</span><span class="tl">R</span><span class="tl">O</span><span class="tl">A</span><span class="tl">D</span><span class="tl">W</span><span class="tl">A</span><span class="tl">Y</span>
+          </span></span>
+          <h3 class="visually-hidden">Broadway</h3>
+          <ul class="platform__what">
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> De grootste zaal, met lichtinstallatie en 360 graden geluid.</li>
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> Hier repeteren de wedstrijdteams en ontstaan de shows.</li>
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> Podiumgevoel, elke les opnieuw.</li>
+          </ul>
+          <div class="platform__lines" aria-label="Lijnen op dit perron">
+            <span class="bul sm d" aria-hidden="true"><span>D</span></span>
+            <span class="bul sm mu" aria-hidden="true"><span>Mu</span></span>
+            <span class="bul sm c" aria-hidden="true"><span>C</span></span>
+          </div>
+        </div>
+      </article>
+
+      <!-- THE BRONX -->
+      <article class="platform reveal">
+        <div class="platform__media">
+          <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImNhcmQtaW1hZ2VzL3Nob290LW1hbGFnYS5qcGVnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDE0MDAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19"
+            alt="Dansers tijdens een buitenshoot, sfeer van zaal The Bronx." width="1400" height="933" loading="lazy" decoding="async">
+        </div>
+        <div class="platform__body">
+          <span class="tablet"><span class="tablet__name" aria-hidden="true">
+            <span class="tl">T</span><span class="tl">H</span><span class="tl">E</span><span class="tl space"></span><span class="tl">B</span><span class="tl">R</span><span class="tl">O</span><span class="tl">N</span><span class="tl">X</span>
+          </span></span>
+          <h3 class="visually-hidden">The Bronx</h3>
+          <ul class="platform__what">
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> Het urban en hiphop perron. Rauw, ritmisch, echt.</li>
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> Breakdance, commercial en clipdance vertrekken hier.</li>
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> Vind je crew, vind je flow.</li>
+          </ul>
+          <div class="platform__lines" aria-label="Lijnen op dit perron">
+            <span class="bul sm u" aria-hidden="true"><span>U</span></span>
+            <span class="bul sm c" aria-hidden="true"><span>C</span></span>
+            <span class="bul sm t" aria-hidden="true"><span>T</span></span>
+          </div>
+        </div>
+      </article>
+
+      <!-- MANHATTAN -->
+      <article class="platform reveal">
+        <div class="platform__media">
+          <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImdhbGxlcnkvSU1HXzIyNTguSlBHIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDExMDAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19"
+            alt="Danser in klassieke houding in de zaal Manhattan." width="1100" height="1571" loading="lazy" decoding="async">
+        </div>
+        <div class="platform__body">
+          <span class="tablet"><span class="tablet__name" aria-hidden="true">
+            <span class="tl">M</span><span class="tl">A</span><span class="tl">N</span><span class="tl">H</span><span class="tl">A</span><span class="tl">T</span><span class="tl">T</span><span class="tl">A</span><span class="tl">N</span>
+          </span></span>
+          <h3 class="visually-hidden">Manhattan</h3>
+          <ul class="platform__what">
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> Klassiek en ballet, met barres langs de wand.</li>
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> Waar techniek en elegantie samenkomen.</li>
+            <li><span class="arrow" aria-hidden="true">&rarr;</span> De basis onder elke sterke danser.</li>
+          </ul>
+          <div class="platform__lines" aria-label="Lijnen op dit perron">
+            <span class="bul sm b" aria-hidden="true"><span>B</span></span>
+            <span class="bul sm m" aria-hidden="true"><span>M</span></span>
+            <span class="bul sm j" aria-hidden="true"><span>J</span></span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     STATION DIRECTORY · lines / styles board
+     ========================================================================= -->
+<section class="band" aria-labelledby="dir-title">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-sign" id="dir-title"><span class="bul sm j" aria-hidden="true"><span>J</span></span> Vind jouw lijn</span>
+      <p class="sec-lead">Achttien stijlen, elk een eigen lijn. Van kleuterdans tot tricks. Jouw route begint bij de stijl die je goesting geeft.</p>
+    </div>
+
+    <nav class="directory reveal" aria-label="Overzicht van de danslijnen">
+      <a class="directory__row" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+        <span class="bul u" aria-hidden="true"><span>U</span></span>
+        <span class="directory__name">Urban</span>
+        <span class="directory__meta">Local &amp; Express</span>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </a>
+      <a class="directory__row" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+        <span class="bul d" aria-hidden="true"><span>D</span></span>
+        <span class="directory__name">Disco</span>
+        <span class="directory__meta">Wereldkampioen 2025</span>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </a>
+      <a class="directory__row" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+        <span class="bul m" aria-hidden="true"><span>M</span></span>
+        <span class="directory__name">Modern</span>
+        <span class="directory__meta">Local &amp; Express</span>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </a>
+      <a class="directory__row" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+        <span class="bul j" aria-hidden="true"><span>J</span></span>
+        <span class="directory__name">Jazz</span>
+        <span class="directory__meta">Local &amp; Express</span>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </a>
+      <a class="directory__row" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+        <span class="bul b" aria-hidden="true"><span>B</span></span>
+        <span class="directory__name">Ballet</span>
+        <span class="directory__meta">Manhattan</span>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </a>
+      <a class="directory__row" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+        <span class="bul c" aria-hidden="true"><span>C</span></span>
+        <span class="directory__name">Clipdance</span>
+        <span class="directory__meta">The Bronx</span>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </a>
+      <a class="directory__row" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+        <span class="bul k" aria-hidden="true"><span>K</span></span>
+        <span class="directory__name">Kleuterdans</span>
+        <span class="directory__meta">3 tot 6 jaar</span>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </a>
+      <a class="directory__row" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">
+        <span class="bul mu" aria-hidden="true"><span>Mu</span></span>
+        <span class="directory__name">Musical</span>
+        <span class="directory__meta">Broadway</span>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </a>
+      <div class="directory__more">En verder: Ballet, Breakdance, Commercial, Fitness, G-Dans, Heels, Koppeldans, Latin, Paaldansen, Stretching, Tricks. Achttien lijnen in totaal.</div>
+    </nav>
+  </div>
+</section>
+
+<!-- =========================================================================
+     SERVICE RECORD · proof / hall of fame wall
+     ========================================================================= -->
+<section class="band band--ink" id="bewijs" aria-labelledby="bewijs-title">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-sign" id="bewijs-title"><span class="bul sm d" aria-hidden="true"><span>D</span></span> Dienststaat</span>
+      <p class="sec-lead">Hier groeit niet alleen een sterke danser, maar ook een sterk persoon. De cijfers en de titels vertellen mee het verhaal.</p>
+    </div>
+
+    <dl class="stats reveal">
+      <div class="stat"><b>1000</b><span>Dansers</span></div>
+      <div class="stat"><b>11 jaar</b><span>Ervaring sinds 2015</span></div>
+      <div class="stat"><b>30+</b><span>Gediplomeerde docenten</span></div>
+      <div class="stat"><b>17</b><span>Wedstrijdteams</span></div>
+    </dl>
+
+    <div class="fame reveal">
+      <figure class="fame__cell wide" style="margin:0">
+        <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImdhbGxlcnkvV2hhdHNBcHAtSW1hZ2UtMjAyNS0wNC0xMi1hdC0yMS40MS4xNi5qcGVnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDEyODAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19"
+          alt="Wedstrijdgroep van Hypnosis op het podium." width="1280" height="800" loading="lazy" decoding="async">
+        <figcaption class="fame__cap">Wereld- &amp; Europees kampioen Disco 2025</figcaption>
+      </figure>
+      <figure class="fame__cell" style="margin:0">
+        <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImdhbGxlcnkvdGVhbS1pbmZpbml0eS1FSy16d2VkZW4tMjAyNC0xLmpwZWciLCAiZWRpdHMiOiB7ImpwZWciOiB7InF1YWxpdHkiOiA4NX0sICJyZXNpemUiOiB7IndpZHRoIjogMTEwMCwgImZpdCI6ICJpbnNpZGUifSwgInNoYXJwZW4iOiB0cnVlfX0="
+          alt="Team Infinity op het EK in Zweden 2024." width="1100" height="1571" loading="lazy" decoding="async">
+        <figcaption class="fame__cap">Team Infinity &middot; EK Zweden</figcaption>
+      </figure>
+      <figure class="fame__cell" style="margin:0">
+        <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImdhbGxlcnkvV2hhdHNBcHAtSW1hZ2UtMjAyNi0wNS0yOC1hdC0yMC4xMS4yNS5qcGVnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDExMDAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19"
+          alt="Kampioenen die hun titel vieren." width="1100" height="825" loading="lazy" decoding="async">
+        <figcaption class="fame__cap">Jeugdsportploeg van het jaar</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     HOME OF THE HYPNOS · warmth beat (family, safe haven)
+     ========================================================================= -->
+<section class="band band--tiled tiled" id="home" aria-labelledby="home-title">
+  <div class="wrap">
+    <div class="home">
+      <div class="home__media reveal" aria-hidden="false">
+        <figure style="margin:0">
+          <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzL2tsZXV0ZXItMS5qcGVnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDExNTIsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19"
+            alt="Kleuters in de dansles bij Hypnosis." width="1152" height="768" loading="lazy" decoding="async">
+        </figure>
+        <figure style="margin:0">
+          <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzL2Jhci00LmpwZyIsICJlZGl0cyI6IHsianBlZyI6IHsicXVhbGl0eSI6IDg1fSwgInJlc2l6ZSI6IHsid2lkdGgiOiAxMjgwLCAiZml0IjogImluc2lkZSJ9LCAic2hhcnBlbiI6IHRydWV9fQ=="
+            alt="De bar en loungeruimte Central Park bij BASECAMP." width="1280" height="853" loading="lazy" decoding="async">
+        </figure>
+      </div>
+      <div class="reveal">
+        <h2 class="home__title" id="home-title">
+          Home of the hypnos
+          <span class="nl">Hier ontstaan vriendschappen voor het leven.</span>
+        </h2>
+        <p class="home__quote">Wij zijn <span>die vuurtoren in tijden van storm</span>. De safe haven voor velen.</p>
+        <p class="sec-lead" style="margin-top:1.1rem">In Central Park drink je iets terwijl je wacht, in The Printing House train je gratis mee als wedstrijddanser, en overal voel je: je hoort erbij. BASECAMP is meer dan een gebouw. Het is jouw tweede thuis.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     INCLUSION STOP · Magic & Rising Stars
+     ========================================================================= -->
+<section class="band" aria-labelledby="incl-title">
+  <div class="wrap">
+    <div class="incl reveal">
+      <div class="incl__media">
+        <img src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzL2tsZXV0ZXItNC5qcGVnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDExNTIsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19"
+          alt="Dansles waar iedereen welkom is bij Hypnosis." width="1152" height="768" loading="lazy" decoding="async">
+      </div>
+      <div class="incl__body">
+        <span class="plate" style="align-self:flex-start"><span class="bul sm g" aria-hidden="true"><span>G</span></span> Iedereen hoort erbij</span>
+        <h2 class="incl__title">Magic &amp; Rising Stars</h2>
+        <p class="sec-lead">Dans voor mensen met een beperking, onder andere met het syndroom van Down. De enige in de regio. Want niet iedereen hoeft op een podium te staan om een echte danser te zijn.</p>
+        <p class="home__quote" style="font-size:1.15rem">Bij Hypnosis geloven we dat dans voor iedereen moet zijn.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================================
+     FINAL CTA · Inschrijven
+     ========================================================================= -->
+<section class="band final" aria-labelledby="final-title">
+  <div class="wrap">
+    <div class="reveal">
+      <h2 class="final__title" id="final-title">
+        Stap op.
+        <span class="nl">Seizoen 2026 tot 2027 vertrekt op maandag 7 september.</span>
+      </h2>
+      <p class="payoff" style="border-color:#000;color:#000;margin-top:1.2rem">Get your talent on track!</p>
+      <div class="final__cta">
+        <a class="btn btn--ink" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrow" aria-hidden="true">&rarr;</span></a>
+        <a class="btn btn--ink" style="background:transparent;color:#000;border:2px solid #000" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Reserveer een gratis proefles</a>
+      </div>
+    </div>
+    <div class="final__facts reveal">
+      <div><span class="arrow" aria-hidden="true">&rarr;</span> Gratis proeflessenweek 7 tot 12 september 2026</div>
+      <div><span class="arrow" aria-hidden="true">&rarr;</span> BASECAMP, Groenestraat 170B, Roeselare</div>
+      <div><span class="arrow" aria-hidden="true">&rarr;</span> Max 28 dansers per cursus, echte begeleiding</div>
+      <div><span class="arrow" aria-hidden="true">&rarr;</span> info@hdac.be &middot; 0486 414 404</div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- =========================================================================
+     FOOTER · signage style
+     ========================================================================= -->
+<footer>
+  <div class="wrap foot">
+    <div>
+      <span class="foot__brand"><span class="bul sm d" aria-hidden="true"><span>H</span></span> Hypnosis Dance Academy</span>
+      <p class="foot__tag">Get your talent on track. Home of the hypnos, in het hart van Roeselare.</p>
+    </div>
+    <div>
+      <h3>Station</h3>
+      <ul>
+        <li><a href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven</a></li>
+        <li><a href="#vertrek">Vertrektijden</a></li>
+        <li><a href="#platforms">Platforms</a></li>
+        <li><a href="#lijnen">Lijnen</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Contact</h3>
+      <ul>
+        <li><a href="mailto:info@hdac.be">info@hdac.be</a></li>
+        <li><a href="tel:+32486414404">0486 414 404</a></li>
+        <li>Broeder Adolfsstraat 3, 8800 Roeselare</li>
+        <li>
+          <a href="https://facebook.com/hypnosisdanceacademy">Facebook</a> &middot;
+          <a href="https://instagram.com/hypnosisdanceacademy">Instagram</a> &middot;
+          <a href="https://tiktok.com/@hypnosis_dance_academy">TikTok</a> &middot;
+          <a href="https://youtube.com/c/hypnosisdanceacademyvzwroeselare">YouTube</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap foot__bottom">
+    <span>#homeofthehypnos &middot; #TheOnlyWayIsUp</span>
+    <span>Ideatie-prototype &middot; Concept E</span>
+  </div>
+</footer>
+
+<button class="motion-toggle" id="motion-toggle" type="button" aria-pressed="false">Pauzeer beweging</button>
+<div class="concept-tag" aria-hidden="true">Concept E &middot; BASECAMP Terminal</div>
+
+<!-- =========================================================================
+     CDN libraries (v2 allowed): GSAP + ScrollTrigger + DrawSVG + Lenis, https
+     ========================================================================= -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/DrawSVGPlugin.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js" defer></script>
+
+<script>
+/* ==========================================================================
+   Concept E behaviour. All progressive enhancement: the page is fully usable
+   with JS off and libraries blocked. prefers-reduced-motion is first-class.
+   ========================================================================== */
+(function(){
+  "use strict";
+
+  var prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var motionEnabled = !prefersReduced;
+
+  /* ---- Line palette + style copy (single source of truth for map + board) -- */
+  var LINES = {
+    u:  {name:"Urban",  letter:"U",  cls:"u"},
+    d:  {name:"Disco",  letter:"D",  cls:"d"},
+    m:  {name:"Modern", letter:"M",  cls:"m"},
+    j:  {name:"Jazz",   letter:"J",  cls:"j"},
+    b:  {name:"Ballet", letter:"B",  cls:"b"},
+    c:  {name:"Clipdance", letter:"C", cls:"c"},
+    mu: {name:"Musical", letter:"Mu", cls:"mu"}
+  };
+
+  var MAP_DETAIL = {
+    d:  {meta:"Lijn D · Local & Express", txt:"Onze paradepaardje. Meervoudig wereld- en Europees kampioen Disco. Van de eerste passen tot het WK-podium, op de D-lijn groei je in jouw tempo.",
+         img:"eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImdhbGxlcnkvV2hhdHNBcHAtSW1hZ2UtMjAyNS0wNC0xMi1hdC0yMS40MS4xNi5qcGVnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDEyODAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19", alt:"Wedstrijdgroep Disco op het podium."},
+    u:  {meta:"Lijn U · Local & Express", txt:"Het urban perron van The Bronx. Rauw, ritmisch en echt. Van je eerste move tot een plek in een crew.",
+         img:"eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzLzVEOTEzMkQ4LTk0NkMtNDFBNy1BODQ1LUI0QTc4M0Y3NzlCOS5KUEciLCAiZWRpdHMiOiB7ImpwZWciOiB7InF1YWxpdHkiOiA4NX0sICJyZXNpemUiOiB7IndpZHRoIjogMTI4MCwgImZpdCI6ICJpbnNpZGUifSwgInNoYXJwZW4iOiB0cnVlfX0=", alt:"Urban dansactie."},
+    m:  {meta:"Lijn M · Local & Express", txt:"Modern verbindt techniek en gevoel. Een expresslijn voor wie zich echt wil uitdrukken.",
+         img:"eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImFydGljbGUtaW1hZ2VzL0lNR18wMTkzLkpQRyIsICJlZGl0cyI6IHsianBlZyI6IHsicXVhbGl0eSI6IDg1fSwgInJlc2l6ZSI6IHsid2lkdGgiOiAxMjgwLCAiZml0IjogImluc2lkZSJ9LCAic2hhcnBlbiI6IHRydWV9fQ==", alt:"Moderne dans in actie."},
+    b:  {meta:"Lijn B · Local", txt:"Ballet in Manhattan, met barres langs de wand. De basis onder elke sterke danser, van kleuter tot gevorderd.",
+         img:"eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImdhbGxlcnkvSU1HXzIyNTguSlBHIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDExMDAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19", alt:"Danser in klassieke houding."},
+    j:  {meta:"Lijn J · Local & Express", txt:"Jazz brengt energie en flair. Een lijn vol dynamiek, ergens tussen klassiek en commercieel.",
+         img:"eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImNhcmQtaW1hZ2VzL3Nob290LW1hbGFnYS5qcGVnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDEyODAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19", alt:"Dansers tijdens een fotoshoot."},
+    mu: {meta:"Lijn Mu · Local", txt:"Musical brengt zang, dans en spel samen op Broadway. Podiumgevoel van de eerste les.",
+         img:"eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogInNlcnZpY2UtaW1hZ2VzL0xBTDA4NjMzMi5qcGciLCAiZWRpdHMiOiB7ImpwZWciOiB7InF1YWxpdHkiOiA4NX0sICJyZXNpemUiOiB7IndpZHRoIjogMTEwMCwgImZpdCI6ICJpbnNpZGUifSwgInNoYXJwZW4iOiB0cnVlfX0=", alt:"Musicaloptreden op het podium."}
+  };
+  var CF = "https://d1ngj59m25pphk.cloudfront.net/";
+
+  /* ---- Live clock -------------------------------------------------------- */
+  var clockEl = document.getElementById("clock");
+  function pad(n){return (n<10?"0":"")+n;}
+  function tick(){
+    if(!clockEl) return;
+    var d = new Date();
+    clockEl.textContent = pad(d.getHours())+":"+pad(d.getMinutes());
+  }
+  tick(); setInterval(tick, 15000);
+
+  /* ---- Departures board data (illustrative but realistic) ---------------- */
+  var CLASSES = [
+    // room, line-key, name, mode(local/express), style, age, timeOffsetMin
+    {room:"Broadway", key:"mu", name:"Musical Kids",    mode:"local",   style:"Musical",     age:"kind",      off:4},
+    {room:"Broadway", key:"d",  name:"Disco Challenge", mode:"express", style:"Disco",       age:"tiener",    off:12},
+    {room:"Broadway", key:"c",  name:"Clipdance Fun",   mode:"local",   style:"Clipdance",   age:"tiener",    off:26},
+    {room:"The Bronx", key:"u", name:"Urban Kids",      mode:"local",   style:"Urban",       age:"kind",      off:7},
+    {room:"The Bronx", key:"u", name:"Urban Express",   mode:"express", style:"Urban",       age:"tiener",    off:19},
+    {room:"The Bronx", key:"t", name:"Tricks & Acro",   mode:"express", style:"Tricks",      age:"tiener",    off:35},
+    {room:"Manhattan", key:"k", name:"Kleuterdans",     mode:"local",   style:"Kleuterdans", age:"kleuter",   off:2},
+    {room:"Manhattan", key:"b", name:"Ballet Fun",      mode:"local",   style:"Ballet",      age:"kind",      off:15},
+    {room:"Manhattan", key:"m", name:"Modern Challenge",mode:"express", style:"Modern",      age:"volwassen", off:31}
+  ];
+  var LINEBUL = {u:"u",d:"d",m:"m",j:"j",b:"b",c:"c",g:"g",t:"t",k:"k",f:"f",mu:"mu"};
+  var LETTER = {u:"U",d:"D",m:"M",j:"J",b:"B",c:"C",g:"G",t:"T",k:"K",f:"F",mu:"Mu"};
+
+  var boardBody = document.getElementById("board-body");
+  var boardStatus = document.getElementById("board-status");
+  var fStyle = document.getElementById("f-style");
+  var fAge = document.getElementById("f-age");
+  var fLevel = document.getElementById("f-level");
+  var baseTime = new Date();
+
+  function fmtTime(offMin){
+    var d = new Date(baseTime.getTime() + offMin*60000);
+    return pad(d.getHours())+":"+pad(d.getMinutes());
+  }
+  function modeSvg(mode){
+    if(mode==="express"){
+      return '<svg width="16" height="16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" transform="rotate(45 8 8)" fill="#fff"/></svg>';
+    }
+    return '<svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#fff" stroke-width="3"/></svg>';
+  }
+
+  function buildBoard(){
+    if(!boardBody) return;
+    var wantStyle = fStyle ? fStyle.value : "";
+    var wantAge   = fAge ? fAge.value : "";
+    var wantLevel = fLevel ? fLevel.value : "";
+
+    var rooms = ["Broadway","The Bronx","Manhattan"];
+    var html = "";
+    var total = 0;
+
+    rooms.forEach(function(room){
+      var rows = CLASSES.filter(function(c){
+        if(c.room!==room) return false;
+        if(wantStyle && c.style!==wantStyle) return false;
+        if(wantAge && c.age!==wantAge) return false;
+        if(wantLevel && c.mode!==wantLevel) return false;
+        return true;
+      }).sort(function(a,b){return a.off-b.off;});
+
+      if(!rows.length) return;
+
+      html += '<div class="board__group"><div class="board__room"><span class="bul sm '+LINEBUL[rows[0].key]+'" aria-hidden="true"><span>'+LETTER[rows[0].key]+'</span></span> '+room+'</div>';
+      rows.forEach(function(c, idx){
+        total++;
+        var status = c.off<=8 ? '<span class="board__status nu">Nu</span>' : '<span class="board__status straks">Straks</span>';
+        var ageLabel = ({kleuter:"3 tot 6 jaar",kind:"6 tot 12 jaar",tiener:"12 tot 16 jaar",volwassen:"Volwassenen"})[c.age] || "";
+        var modeLabel = c.mode==="express" ? "Express · Challenge" : "Local · Fun";
+        html += ''
+          + '<div class="board__row">'
+          +   '<span class="flap" aria-hidden="true"><span>'+fmtTime(c.off)+'</span></span>'
+          +   '<span class="board__when">'
+          +     '<span class="board__class"><span class="bul sm '+LINEBUL[c.key]+'" aria-hidden="true"><span>'+LETTER[c.key]+'</span></span> <b>'+c.name+'</b></span>'
+          +     '<span class="board__mode">'+modeSvg(c.mode)+' '+modeLabel+' · '+ageLabel+'</span>'
+          +   '</span>'
+          +   status
+          + '</div>';
+      });
+      html += '</div>';
+    });
+
+    if(!total){
+      html = '<div class="board__empty">Geen les gevonden voor deze route. Pas je filter aan of bekijk alle lijnen.</div>';
+    }
+    boardBody.innerHTML = html;
+
+    // Accessible text equivalent for the live board
+    if(boardStatus){
+      boardStatus.textContent = total===0
+        ? "Geen lessen gevonden voor de gekozen route."
+        : total + " lessen op het vertrekbord voor de gekozen route.";
+    }
+
+    if(motionEnabled) animateFlaps();
+  }
+
+  /* ---- Split-flap style flip on load (transform/opacity only) ------------ */
+  function animateFlaps(){
+    var flaps = boardBody.querySelectorAll(".flap span");
+    for(var i=0;i<flaps.length;i++){
+      (function(el, delay){
+        el.style.opacity = "0";
+        el.style.transform = "translateY(-6px) rotateX(60deg)";
+        el.style.transformOrigin = "center bottom";
+        setTimeout(function(){
+          el.style.transition = "opacity .28s ease, transform .28s cubic-bezier(.2,.7,.2,1)";
+          el.style.opacity = "1";
+          el.style.transform = "none";
+        }, delay);
+      })(flaps[i], 40*i);
+    }
+  }
+
+  buildBoard();
+  if(fStyle) fStyle.addEventListener("change", buildBoard);
+  if(fAge) fAge.addEventListener("change", buildBoard);
+  if(fLevel) fLevel.addEventListener("change", buildBoard);
+  var boardForm = document.getElementById("board-filters");
+  if(boardForm) boardForm.addEventListener("submit", function(e){e.preventDefault();});
+
+  /* ---- Interactive wall map --------------------------------------------- */
+  var stops = document.querySelectorAll(".mapsvg .stop");
+  var mdImg = document.getElementById("md-img");
+  var mdTitle = document.getElementById("md-title");
+  var mdBul = document.getElementById("md-bul");
+  var mdMeta = document.getElementById("md-meta");
+  var mdTxt = document.getElementById("md-txt");
+
+  function selectStop(key){
+    var line = LINES[key];
+    var det = MAP_DETAIL[key];
+    if(!line || !det) return;
+    for(var i=0;i<stops.length;i++){ stops[i].classList.toggle("is-active", stops[i].getAttribute("data-key")===key); }
+    if(mdBul){ mdBul.className = "bul sm "+line.cls; mdBul.innerHTML = "<span>"+line.letter+"</span>"; }
+    if(mdTitle){ mdTitle.childNodes[mdTitle.childNodes.length-1].nodeValue = " "+line.name; }
+    if(mdMeta) mdMeta.textContent = det.meta;
+    if(mdTxt) mdTxt.textContent = det.txt;
+    if(mdImg){ mdImg.src = CF+det.img; mdImg.alt = det.alt; }
+  }
+  for(var i=0;i<stops.length;i++){
+    (function(stop){
+      var key = stop.getAttribute("data-key");
+      stop.addEventListener("click", function(){selectStop(key);});
+      stop.addEventListener("mouseenter", function(){selectStop(key);});
+      stop.addEventListener("keydown", function(e){
+        if(e.key==="Enter" || e.key===" "){ e.preventDefault(); selectStop(key); }
+      });
+    })(stops[i]);
+  }
+
+  /* ---- Framed station screen: load YouTube showreel on demand ------------ */
+  var screenPlay = document.getElementById("screen-play");
+  var screenFrame = document.getElementById("screen-frame");
+  var screenPoster = document.getElementById("screen-poster");
+  function loadShowreel(autoplay){
+    if(!screenFrame || screenFrame.querySelector("iframe")) return;
+    var auto = autoplay ? "&autoplay=1" : "";
+    var iframe = document.createElement("iframe");
+    iframe.src = "https://www.youtube.com/embed/22bzTYoQtWc?mute=1&loop=1&playlist=22bzTYoQtWc&controls=0&modestbranding=1&playsinline=1&rel=0"+auto;
+    iframe.title = "Hypnosis Productions showreel";
+    iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+    iframe.setAttribute("loading","lazy");
+    iframe.width = "560"; iframe.height = "315";
+    screenFrame.appendChild(iframe);
+    if(screenPoster) screenPoster.style.display = "none";
+    if(screenPlay) screenPlay.style.display = "none";
+  }
+  if(screenPlay){ screenPlay.addEventListener("click", function(){ loadShowreel(true); }); }
+
+  /* ---- Reveal on scroll: prefer GSAP ScrollTrigger, fallback to IO ------- */
+  function ioReveal(){
+    var els = document.querySelectorAll(".reveal");
+    if(!("IntersectionObserver" in window) || !motionEnabled){
+      for(var i=0;i<els.length;i++) els[i].classList.add("is-in");
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add("is-in"); io.unobserve(en.target); }
+      });
+    }, {rootMargin:"0px 0px -8% 0px", threshold:0.08});
+    for(var j=0;j<els.length;j++) io.observe(els[j]);
+  }
+
+  /* ---- GSAP + Lenis wiring (only if libraries loaded AND motion allowed) - */
+  function initEnhanced(){
+    if(!motionEnabled){ ioReveal(); return; }
+    var hasGsap = window.gsap && window.ScrollTrigger;
+    if(hasGsap){
+      gsap.registerPlugin(ScrollTrigger);
+      if(gsap.registerPlugin && window.DrawSVGPlugin){ gsap.registerPlugin(DrawSVGPlugin); }
+
+      // Lenis smooth scroll (optional)
+      if(window.Lenis){
+        try{
+          var lenis = new Lenis({duration:1.05, smoothWheel:true});
+          function raf(t){ lenis.raf(t); requestAnimationFrame(raf); }
+          requestAnimationFrame(raf);
+          lenis.on("scroll", ScrollTrigger.update);
+        }catch(err){ /* non-fatal */ }
+      }
+
+      // Reveal via ScrollTrigger (transform/opacity only)
+      gsap.utils.toArray(".reveal").forEach(function(el){
+        gsap.to(el, {
+          opacity:1, y:0, duration:.7, ease:"power2.out",
+          scrollTrigger:{ trigger:el, start:"top 88%", once:true }
+        });
+        // ensure final state class stays consistent
+        ScrollTrigger.create({trigger:el, start:"top 88%", once:true, onEnter:function(){el.classList.add("is-in");}});
+      });
+
+      // Draw the fat map lines when the map scrolls into view
+      if(window.DrawSVGPlugin){
+        var routes = document.querySelectorAll(".mapsvg .route");
+        if(routes.length){
+          gsap.set(routes, {drawSVG:"0%"});
+          ScrollTrigger.create({
+            trigger:".wallmap", start:"top 78%", once:true,
+            onEnter:function(){ gsap.to(routes, {drawSVG:"100%", duration:1.1, ease:"power1.inOut", stagger:.08}); }
+          });
+        }
+      }
+    } else {
+      ioReveal();
+    }
+  }
+
+  // Libraries load with defer; wait for window load so gsap globals exist.
+  if(document.readyState === "complete"){ initEnhanced(); }
+  else { window.addEventListener("load", initEnhanced); }
+  // Also run IO reveal immediately as a safety net if libraries never arrive.
+  setTimeout(function(){
+    var anyIn = document.querySelector(".reveal.is-in");
+    if(!anyIn) ioReveal();
+  }, 1200);
+
+  /* ---- Motion pause toggle (WCAG 2.2.2 for the >5s flap/draw motion) ----- */
+  var motionToggle = document.getElementById("motion-toggle");
+  function applyMotionState(){
+    motionToggle.setAttribute("aria-pressed", motionEnabled ? "false" : "true");
+    motionToggle.textContent = motionEnabled ? "Pauzeer beweging" : "Beweging aan";
+    document.documentElement.classList.toggle("motion-off", !motionEnabled);
+  }
+  if(motionToggle){
+    applyMotionState();
+    motionToggle.addEventListener("click", function(){
+      motionEnabled = !motionEnabled;
+      applyMotionState();
+      if(!motionEnabled){
+        // freeze everything at final state
+        if(window.ScrollTrigger){ ScrollTrigger.getAll().forEach(function(st){st.disable(false);}); }
+        var els = document.querySelectorAll(".reveal");
+        for(var i=0;i<els.length;i++) els[i].classList.add("is-in");
+        var routes = document.querySelectorAll(".mapsvg .route");
+        if(window.gsap) gsap.set(routes, {clearProps:"all"});
+      } else {
+        location.reload();
+      }
+    });
+  }
+
+})();
+</script>
+</body>
+</html>

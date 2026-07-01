@@ -47,8 +47,13 @@
   .platforms{
     display:grid;gap:1.1rem;
     grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-    margin-bottom:auto;
+    margin-bottom:2.4rem;
   }
+  .grouplabel{
+    text-transform:uppercase;letter-spacing:.08em;font-size:.8rem;
+    font-weight:700;color:#8a8a8e;margin:2.4rem 0 1rem;
+  }
+  .rule + .grouplabel{margin-top:0}
   .platform{
     display:flex;flex-direction:column;gap:1rem;
     background:var(--paper);color:var(--ink);
@@ -92,27 +97,44 @@
 
   <p class="lede"></p>
   <h1>Get your <br>talent on <span class="track">track.</span></h1>
-  <p class="intro">Drie richtingen voor de nieuwe website — ééns metaforisch spoor, drie manieren om het te rijden. Kies een perron en verken het concept. Dit zijn ideatie-prototypes: de vorm en het verhaal, nog niet de definitieve inhoud.</p>
+  <p class="intro">One line, meerdere manieren om het te rijden. Kies een perron en verken een concept. Dit zijn ideatie prototypes: de vorm en het verhaal, nog niet de definitieve inhoud.</p>
 
   <div class="rule"></div>
 
-  <nav class="platforms" aria-label="Concepten">
+  <p class="grouplabel">Ronde 2 · next level (echte beelden, video, beweging)</p>
+  <nav class="platforms" aria-label="Concepten ronde 2">
+    <a class="platform" href="concept-d.html">
+      <span class="line"><span class="letter" style="background:var(--J)">D</span></span>
+      <h2>Ride the Line</h2>
+      <p class="desc">Filmische rit langs één dik spoor, met echte video en beeld. Apple-gewijs, warm, storytelling first.</p>
+      <span class="go">Verken concept D <span class="arrow" aria-hidden="true">→</span></span>
+    </a>
+    <a class="platform" href="concept-e.html">
+      <span class="line"><span class="letter" style="background:var(--F)">E</span></span>
+      <h2>BASECAMP Terminal</h2>
+      <p class="desc">Je komt aan in het station. De vertrektijden zijn het kloppend hart, de zalen zijn perrons om te verkennen.</p>
+      <span class="go">Verken concept E <span class="arrow" aria-hidden="true">→</span></span>
+    </a>
+  </nav>
+
+  <p class="grouplabel">Ronde 1 · eerste richtingen</p>
+  <nav class="platforms" aria-label="Concepten ronde 1">
     <a class="platform" href="concept-a.html">
       <span class="line"><span class="letter" style="background:var(--D)">A</span></span>
       <h2>The Living Map</h2>
-      <p class="desc">De homepage ís een interactieve metrokaart. Verkennend, grafisch, gedurfd — je navigeert de school als een netwerk.</p>
+      <p class="desc">De homepage is een interactieve metrokaart. Verkennend, grafisch, gedurfd: je navigeert de school als een netwerk.</p>
       <span class="go">Verken concept A <span class="arrow" aria-hidden="true">→</span></span>
     </a>
     <a class="platform" href="concept-b.html">
       <span class="line"><span class="letter" style="background:var(--M)">B</span></span>
       <h2>Ride the Line</h2>
-      <p class="desc">Eén spoor tekent zich uit terwijl je scrolt. Elk verhaalmoment is een halte. Filmisch, warm, storytelling-first.</p>
+      <p class="desc">Eén spoor tekent zich uit terwijl je scrolt. Elk verhaalmoment is een halte. Filmisch en warm.</p>
       <span class="go">Verken concept B <span class="arrow" aria-hidden="true">→</span></span>
     </a>
     <a class="platform" href="concept-c.html">
       <span class="line"><span class="letter blk" style="background:var(--U);color:var(--ink)">C</span></span>
       <h2>The Departures Board</h2>
-      <p class="desc">Bewegwijzering en een live vertrektijden-bord. Helder, snel, conversiegericht — bruikbaar in 90 seconden.</p>
+      <p class="desc">Bewegwijzering en een live vertrektijden-bord. Helder, snel, conversiegericht: bruikbaar in 90 seconden.</p>
       <span class="go">Verken concept C <span class="arrow" aria-hidden="true">→</span></span>
     </a>
   </nav>
