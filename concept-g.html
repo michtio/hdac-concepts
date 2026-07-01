@@ -1,11 +1,12 @@
 <!doctype html>
 <!--
-  Hypnosis Dance Academy - Concept G (hand-built, v2)
-  ONE subway line is the design language: it flows from the hero platform
-  into a continuous spine, MOVES (a train rides it), morphs through brand
-  colours, takes real Vignelli rounded corners, and forms a station at every
-  beat. Sign-plate headers, bold MTA arrow. Native scroll, no libraries.
-  Real media. Copy mixes English brand lines with Flemish Dutch. No em dashes.
+  Hypnosis Dance Academy - Concept G (hand-built, v3)
+  The line is the design language, used CREATIVELY as you scroll:
+  vertical spine, then a horizontal divider with a crossing line,
+  then it FORKS into two tracks (Local/Fun + Express/Challenge),
+  then a crossing before the terminus. Each beat a different line-moment.
+  Native scroll, no libraries. pathLength-normalised CSS draws + CSS trains.
+  Real media. Copy mixes English + Flemish Dutch. No em dashes.
 -->
 <html lang="nl">
 <head>
@@ -23,7 +24,6 @@
     --ease-train:cubic-bezier(.58,.3,.005,1);
     --ease-out:cubic-bezier(.16,1,.3,1);
     --pad:clamp(1.25rem,4vw,4rem);
-    --rail:clamp(30px,6vw,92px);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html{-webkit-text-size-adjust:100%;background:var(--ink)}
@@ -33,8 +33,6 @@
   ::selection{background:var(--U);color:#000}
 
   .bullet{display:inline-flex;align-items:center;justify-content:center;width:1.9em;height:1.9em;border-radius:50%;font-weight:500;font-size:.62em;color:#fff;flex:0 0 auto;line-height:1}
-
-  /* real Hypnosis / MTA arrow, correct proportion, bolder presence */
   .arrowbox{display:inline-flex;height:.9em;aspect-ratio:1108.97/912.68;overflow:hidden;flex:0 0 auto}
   .arrow{height:100%;width:100%;fill:currentColor;display:block}
   @keyframes subway{0%{transform:translateX(0)}48%{transform:translateX(170%)}48.01%{transform:translateX(-170%)}100%{transform:translateX(0)}}
@@ -52,15 +50,14 @@
   :focus-visible{outline:3px solid var(--U);outline-offset:3px}
   @media(max-width:760px){.navlinks a:not(.cta){display:none}}
 
-  /* flowing gradient text (animated) */
-  .flow{background:linear-gradient(100deg,#ffe37a 0%,#fbbf3b 30%,#f0851f 50%,#fbbf3b 70%,#ffe37a 100%);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 7s linear infinite}
-  @keyframes flow{to{background-position:220% center}}
+  .flow{background:linear-gradient(100deg,#ffe37a,#fbbf3b 30%,#f0851f 50%,#fbbf3b 70%,#ffe37a);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flowk 7s linear infinite}
+  @keyframes flowk{to{background-position:220% center}}
 
   /* hero */
   .hero{position:relative;height:100svh;min-height:600px;overflow:hidden;display:flex;align-items:flex-end}
   .hero__media{position:absolute;inset:0;z-index:0;overflow:hidden}
   .hero__media img{width:100%;height:112%;object-fit:cover;object-position:50% 26%;will-change:transform}
-  .hero__scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,10,11,.55) 0%,rgba(10,10,11,0) 26%,rgba(10,10,11,.12) 52%,rgba(10,10,11,.96) 100%),radial-gradient(120% 90% at 15% 100%,rgba(10,10,11,.85) 0%,rgba(10,10,11,0) 55%)}
+  .hero__scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,10,11,.55),rgba(10,10,11,0) 26%,rgba(10,10,11,.12) 52%,rgba(10,10,11,.96)),radial-gradient(120% 90% at 15% 100%,rgba(10,10,11,.85),rgba(10,10,11,0) 55%)}
   .hero__inner{position:relative;z-index:2;width:100%;padding:0 var(--pad) clamp(3rem,7vw,6rem)}
   .eyebrow{display:inline-flex;align-items:center;gap:.7rem;text-transform:uppercase;letter-spacing:.14em;font-size:.76rem;font-weight:600;color:#fff;margin-bottom:1.3rem}
   .eyebrow .bullet{background:var(--U);color:#000;font-size:.56rem}
@@ -68,57 +65,62 @@
   .lede{font-size:clamp(1.05rem,1.6vw,1.35rem);color:#e9e9e7;max-width:34ch;margin-bottom:2.2rem}
   .actions{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
   .textlink{display:inline-flex;align-items:center;gap:.6rem;color:#fff;font-weight:600;font-size:.92rem}
-  .textlink .play{width:2.2rem;height:2.2rem;border:1.5px solid rgba(255,255,255,.5);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:border-color .2s,background .2s}
-  .textlink:hover .play{border-color:#fff;background:rgba(255,255,255,.1)}
+  .textlink .play{width:2.2rem;height:2.2rem;border:1.5px solid rgba(255,255,255,.5);border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
   .textlink .play svg{width:.72rem;height:.72rem;fill:#fff;margin-left:2px}
-  /* big wayfinding scroll cue arrow (MTA down arrow) */
-  .scrollcue{position:absolute;left:var(--pad);bottom:1.4rem;z-index:3;width:clamp(28px,3vw,42px);color:rgba(255,255,255,.6)}
-  .scrollcue .arrow{transform:rotate(90deg)}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
-  @media(prefers-reduced-motion:no-preference){.scrollcue{animation:bob 1.8s var(--ease-out) infinite}}
 
-  /* the journey + continuous line */
+  /* shared line primitives (pathLength=1) */
+  .draw{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.3s var(--ease-out)}
+  .in .draw,.draw.in{stroke-dashoffset:0}
+  .ln{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:14}
+  .train{fill:none;stroke:#fff;stroke-linecap:round;stroke-width:8;stroke-dasharray:.035 .965;stroke-dashoffset:1;opacity:0}
+  .in .train{opacity:.95;animation:ride 6s linear infinite}
+  @keyframes ride{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+  .stn{fill:var(--ink);stroke:#fff;stroke-width:5;opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.4);transition:opacity .5s var(--ease-out) .3s,transform .5s var(--ease-out) .3s}
+  .in .stn{opacity:1;transform:scale(1)}
+  .cap{fill:#fff;opacity:0;transition:opacity .5s var(--ease-out) .4s}
+  .in .cap{opacity:1}
+
   .journey{position:relative;background:var(--ink)}
-  .spine{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:visible}
-  .spine path{fill:none;stroke-linejoin:round;stroke-linecap:round}
-  .spine .track{stroke:url(#lineGrad)}
-  #train{fill:#fff;filter:drop-shadow(0 0 7px rgba(255,255,255,.9))}
-  #trainB{fill:#fff;opacity:.5}
-  .station-node{fill:var(--ink);stroke:#fff;stroke-width:5;transform-box:fill-box;transform-origin:center;transition:transform .55s var(--ease-out),opacity .55s var(--ease-out);opacity:0;transform:scale(.4)}
-  .station-node.in{opacity:1;transform:scale(1)}
+  .beat{position:relative;min-height:88svh;display:flex;align-items:center;padding:clamp(3.5rem,7vw,7rem) var(--pad)}
+  .beat__in{width:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(2.5rem,5vw,5.5rem);align-items:center}
+  @media(max-width:860px){.beat__in{grid-template-columns:1fr}}
 
-  .beat{position:relative;z-index:2;min-height:94svh;display:flex;align-items:center;padding:clamp(3.5rem,8vw,8rem) var(--pad);padding-left:calc(var(--rail) + clamp(2.5rem,6vw,6.5rem))}
-  .beat__grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2.5rem,5vw,5.5rem);align-items:center;width:100%;max-width:1220px}
-  @media(max-width:860px){.beat__grid{grid-template-columns:1fr}}
-
-  /* sign-plate header (black plate, white top rule, bullet, arrow) */
   .plate{display:inline-flex;align-items:center;gap:.7rem;background:#000;border-top:2px solid rgba(255,255,255,.92);border-radius:0 0 7px 7px;padding:.6rem 1rem;margin-bottom:1.6rem;text-transform:uppercase;letter-spacing:.1em;font-size:.78rem;font-weight:700;color:#fff}
-  .plate .bullet{font-size:.5rem}
-  .plate .arrowbox{height:.8em;color:#fff;margin-left:.2rem}
-
-  .beat h2{font-weight:700;text-transform:uppercase;letter-spacing:-.035em;line-height:.98;font-size:clamp(2.4rem,5.4vw,5rem);margin-bottom:1.6rem;color:var(--paper)}
+  .plate .bullet{font-size:.5rem}.plate .arrowbox{height:.8em;color:#fff;margin-left:.2rem}
+  .beat h2{font-weight:700;text-transform:uppercase;letter-spacing:-.035em;line-height:.98;font-size:clamp(2.4rem,5.2vw,4.8rem);margin-bottom:1.5rem;color:var(--paper)}
   .beat p{font-size:clamp(1.05rem,1.5vw,1.3rem);color:#c9c9c6;max-width:42ch;margin-bottom:1.1rem}
-  /* quote as its own little station on a line */
-  .quote{position:relative;margin-top:1.6rem;padding:.3rem 0 .3rem 1.6rem;max-width:40ch}
+  .quote{position:relative;margin-top:1.6rem;padding:.3rem 0 .3rem 1.7rem;max-width:40ch}
   .quote::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;border-radius:3px;background:var(--F)}
   .quote::after{content:"";position:absolute;left:-8px;top:calc(50% - 11px);width:22px;height:22px;border-radius:50%;background:var(--ink);border:5px solid var(--F)}
   .quote span{display:block;color:var(--paper);font-size:clamp(1.15rem,1.7vw,1.5rem);font-weight:500}
-
   .media{position:relative;overflow:hidden;border-radius:4px;aspect-ratio:3/2}
-  .media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;will-change:transform}
+  .media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
   .media .tag{position:absolute;left:0;bottom:1rem;z-index:2;display:inline-flex;align-items:center;gap:.5rem;background:#000;border-top:2px solid rgba(255,255,255,.9);padding:.5rem .85rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:#fff}
   .media .tag .bullet{font-size:.5rem}
 
-  .services{display:flex;flex-direction:column;gap:2.2rem;width:100%;max-width:1120px}
-  .svc{display:grid;grid-template-columns:auto 1fr;gap:1.6rem;align-items:start}
-  @media(max-width:620px){.svc{grid-template-columns:1fr;gap:.6rem}}
-  .svc__badge{display:inline-flex;align-items:center;gap:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.92rem;white-space:nowrap;padding-top:.2rem}
-  .svc__line{display:flex;align-items:center;gap:0;height:22px;margin-bottom:.8rem}
-  .svc__line .l{height:9px;border-radius:5px;flex:1}
-  .svc__line .c{width:22px;height:22px;border-radius:50%;background:var(--ink);flex:0 0 auto;box-shadow:0 0 0 4px var(--ink)}
-  .svc__line .c.d{border-radius:3px;transform:rotate(45deg);width:18px;height:18px}
-  .svc h3{font-size:clamp(1.3rem,2.2vw,1.9rem);text-transform:uppercase;letter-spacing:-.02em;margin-bottom:.5rem}
-  .svc p{font-size:1.02rem;color:#bcbcb9;max-width:44ch;margin:0}
+  /* line-moment: vertical spine drop into S1 (left) */
+  .m-drop{position:absolute;left:0;top:0;width:clamp(90px,14vw,220px);height:100%;z-index:0;pointer-events:none}
+  .s-left .beat__in{padding-left:clamp(2rem,6vw,5rem)}
+
+  /* line-moment: horizontal divider with a crossing line */
+  .divider{position:relative;height:clamp(150px,20vw,240px);width:100%;z-index:1}
+  .divider svg{position:absolute;inset:0;width:100%;height:100%}
+  .dlabel{position:absolute;left:50%;top:50%;transform:translate(-50%,-160%);z-index:2;background:#000;border-top:2px solid #fff;border-radius:0 0 6px 6px;padding:.4rem .8rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#fff;display:inline-flex;align-items:center;gap:.5rem;white-space:nowrap;opacity:0;transition:opacity .5s .5s}
+  .in .dlabel{opacity:1}
+  .dlabel .bullet{font-size:.45rem}
+
+  /* line-moment: FORK into two tracks (Fun local / Challenge express) */
+  .fork{position:relative;padding:clamp(3rem,6vw,6rem) var(--pad)}
+  .fork__svg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .fork__in{position:relative;z-index:1;max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4rem)}
+  @media(max-width:760px){.fork__in{grid-template-columns:1fr;gap:3rem}}
+  .track{padding-top:1rem}
+  .track .badge{display:inline-flex;align-items:center;gap:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.9rem;margin-bottom:1rem}
+  .track h3{font-size:clamp(1.4rem,2.4vw,2.1rem);text-transform:uppercase;letter-spacing:-.02em;margin-bottom:.6rem}
+  .track p{font-size:1.04rem;color:#bcbcb9;max-width:42ch}
+  .fork__head{position:relative;z-index:1;text-align:center;max-width:760px;margin:0 auto clamp(2.5rem,5vw,4rem)}
+  .fork__head .plate{margin-bottom:1.2rem}
+  .fork__head h2{font-weight:700;text-transform:uppercase;letter-spacing:-.03em;font-size:clamp(2.2rem,5vw,4.4rem);line-height:.95}
 
   .close{position:relative;z-index:2;text-align:center;padding:clamp(4.5rem,11vw,10rem) var(--pad);background:var(--U);color:#000}
   .close h2{font-weight:700;text-transform:uppercase;letter-spacing:-.03em;line-height:.9;font-size:clamp(2.8rem,7.5vw,7rem);margin-bottom:1.4rem}
@@ -138,26 +140,23 @@
 
   @media (prefers-reduced-motion: reduce){
     .reveal{opacity:1;transform:none;transition:none}
-    .btn:hover .arrow{animation:none}
-    .flow{animation:none}
+    .draw{stroke-dashoffset:0;transition:none}
+    .train{display:none}.stn{opacity:1;transform:none}.cap,.dlabel{opacity:1}
+    .btn:hover .arrow{animation:none}.flow{animation:none}
     .hero__media img{height:100%}
-    .station-node{opacity:1;transform:none}
-    #train,#trainB{display:none}
   }
 </style>
 </head>
 <body id="top">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="hyp-arrow" viewBox="0 0 1108.97 912.68">
-    <polygon points="1108.97 455.72 653.24 0 482.7 170.54 646.52 334.37 0 334.37 0 575.56 649.28 575.56 482.7 742.14 653.24 912.68 1108.97 456.96 1108.35 456.34 1108.97 455.72"/>
-  </symbol>
+  <symbol id="hyp-arrow" viewBox="0 0 1108.97 912.68"><polygon points="1108.97 455.72 653.24 0 482.7 170.54 646.52 334.37 0 334.37 0 575.56 649.28 575.56 482.7 742.14 653.24 912.68 1108.97 456.96 1108.35 456.34 1108.97 455.72"/></symbol>
 </svg>
 
 <header class="nav" id="nav">
   <a class="wordmark" href="#top"><span class="bullet" style="background:var(--U);color:#000">H</span> Hypnosis</a>
   <nav class="navlinks">
-    <a href="#">Lessen</a><a href="#">Wedstrijd</a><a href="#home">BASECAMP</a>
+    <a href="#">Lessen</a><a href="#">Wedstrijd</a><a href="#s1">BASECAMP</a>
     <a class="cta btn sm" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></a>
   </nav>
 </header>
@@ -176,26 +175,19 @@
         <a class="textlink" href="https://www.youtube.com/watch?v=22bzTYoQtWc" target="_blank" rel="noopener"><span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span> Bekijk de showreel</a>
       </div>
     </div>
-    <span class="scrollcue" aria-hidden="true"><svg class="arrow" viewBox="0 0 1108.97 912.68"><use href="#hyp-arrow"/></svg></span>
   </section>
 
-  <div class="journey" id="journey">
-    <svg class="spine" id="spine" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-          <stop offset="0" stop-color="#fdd630"/><stop offset=".26" stop-color="#943f90"/>
-          <stop offset=".52" stop-color="#e73730"/><stop offset=".78" stop-color="#00add0"/>
-          <stop offset="1" stop-color="#70b747"/>
-        </linearGradient>
-      </defs>
-      <path class="track" id="track" stroke-width="12"></path>
-      <g id="nodes"></g>
-      <circle id="trainB" r="5"></circle>
-      <circle id="train" r="7"></circle>
-    </svg>
+  <div class="journey">
 
-    <section class="beat" id="home" data-node="circle">
-      <div class="beat__grid">
+    <!-- MOMENT 1: vertical spine drops into station 1 (left) -->
+    <section class="beat s-left anim" id="s1">
+      <svg class="m-drop" viewBox="0 0 200 1000" preserveAspectRatio="none" aria-hidden="true">
+        <path class="ln draw" pathLength="1" style="stroke:var(--U)" d="M 60 -10 L 60 300 L 110 350 L 110 430"/>
+        <path class="ln draw" pathLength="1" style="stroke:var(--D)" d="M 110 430 L 110 1010"/>
+        <path class="train" pathLength="1" d="M 60 -10 L 60 300 L 110 350 L 110 1010"/>
+        <circle class="stn" cx="110" cy="430" r="17"/>
+      </svg>
+      <div class="beat__in">
         <div>
           <p class="plate reveal"><span class="bullet" style="background:var(--F)">1</span> Home of the hypnos <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></p>
           <h2 class="reveal d1">Meer dan een dansschool.<br><span class="flow">Een tweede thuis.</span></h2>
@@ -210,33 +202,69 @@
       </div>
     </section>
 
-    <section class="beat" id="tempo" data-node="diamond">
-      <div class="services">
-        <div>
-          <p class="plate reveal"><span class="bullet" style="background:var(--D)">2</span> Fun of Challenge &middot; Local of Express <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></p>
-          <h2 class="reveal d1">Jij kiest<br>je tempo.</h2>
+    <!-- MOMENT 2: the line turns HORIZONTAL as a divider, a second line CROSSES it -->
+    <div class="divider anim" aria-hidden="true">
+      <svg viewBox="0 0 1200 240" preserveAspectRatio="none">
+        <!-- the spine comes from the left, runs across, exits right -->
+        <path class="ln draw" pathLength="1" style="stroke:var(--D)" d="M 110 -20 L 110 80 L 170 120 L 1200 120"/>
+        <!-- a crossing line sweeps through -->
+        <path class="ln draw" pathLength="1" style="stroke:var(--Mu);stroke-width:10" d="M 470 250 L 620 60 L 900 60"/>
+        <path class="train" pathLength="1" d="M 110 -20 L 110 80 L 170 120 L 1200 120"/>
+        <rect class="cap" x="600" y="100" width="80" height="40" rx="20"/>
+        <circle class="stn" cx="900" cy="120" r="15"/>
+        <rect class="stn" x="611" y="51" width="18" height="18" rx="2" transform="rotate(45 620 60)"/>
+      </svg>
+      <span class="dlabel"><span class="bullet" style="background:var(--Mu)">&#9670;</span> Overstap &middot; kies je richting</span>
+    </div>
+
+    <!-- MOMENT 3: the line FORKS into two tracks: Fun (Local) and Challenge (Express) -->
+    <section class="fork anim" id="s2">
+      <svg class="fork__svg" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true">
+        <!-- incoming, then fork -->
+        <path class="ln draw" pathLength="1" style="stroke:#8a8a88;stroke-width:10" d="M 500 -20 L 500 120"/>
+        <path class="ln draw" pathLength="1" style="stroke:var(--G)" d="M 500 120 L 250 240 L 250 620"/>
+        <path class="ln draw" pathLength="1" style="stroke:var(--F)" d="M 500 120 L 750 240 L 750 620"/>
+        <!-- local stops (circles) -->
+        <circle class="stn" cx="250" cy="330" r="14"/><circle class="stn" cx="250" cy="470" r="14"/><circle class="stn" cx="250" cy="600" r="14"/>
+        <!-- express stops (diamonds) -->
+        <rect class="stn" x="741" y="351" width="20" height="20" rx="2" transform="rotate(45 751 361)"/>
+        <rect class="stn" x="741" y="571" width="20" height="20" rx="2" transform="rotate(45 751 581)"/>
+      </svg>
+      <div class="fork__head">
+        <p class="plate reveal"><span class="bullet" style="background:var(--U);color:#000">2</span> Fun of Challenge <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></p>
+        <h2 class="reveal d1">Jij kiest je tempo.</h2>
+      </div>
+      <div class="fork__in">
+        <div class="track reveal d1">
+          <span class="badge" style="color:var(--G)"><span class="bullet" style="background:var(--G)">L</span> Local &middot; Fun</span>
+          <h3>Elke halte, puur voor de goesting</h3>
+          <p>Dansen, vrienden maken, jezelf zijn. De local stopt overal en heeft geen haast. Niet iedereen moet op een podium staan om een echte danser te zijn.</p>
         </div>
-        <div class="svc reveal d2">
-          <span class="svc__badge" style="color:var(--G)"><span class="bullet" style="background:var(--G)">L</span> Local &middot; Fun</span>
-          <div>
-            <div class="svc__line" aria-hidden="true"><span class="l" style="background:var(--G)"></span><span class="c"></span><span class="l" style="background:var(--G)"></span><span class="c"></span><span class="l" style="background:var(--G)"></span><span class="c"></span><span class="l" style="background:var(--G)"></span></div>
-            <h3>Elke halte, puur voor de goesting</h3>
-            <p>Dansen, vrienden maken, jezelf zijn. De local stopt overal en heeft geen haast. Niet iedereen moet op een podium staan om een echte danser te zijn.</p>
-          </div>
-        </div>
-        <div class="svc reveal d3">
-          <span class="svc__badge" style="color:var(--F)"><span class="bullet" style="background:var(--F)">E</span> Express &middot; Challenge</span>
-          <div>
-            <div class="svc__line" aria-hidden="true"><span class="l" style="background:var(--F)"></span><span class="c d"></span><span class="l" style="background:var(--F)"></span><span class="c d"></span><span class="l" style="background:var(--F)"></span></div>
-            <h3>Minder haltes, verder sporen</h3>
-            <p>Techniek, ambitie, podium. De express rijdt door tot aan de wereldtop. Hier groeit niet alleen een sterke danser, maar ook een sterk persoon.</p>
-          </div>
+        <div class="track reveal d2">
+          <span class="badge" style="color:var(--F)"><span class="bullet" style="background:var(--F)">E</span> Express &middot; Challenge</span>
+          <h3>Minder haltes, verder sporen</h3>
+          <p>Techniek, ambitie, podium. De express rijdt door tot aan de wereldtop. Hier groeit niet alleen een sterke danser, maar ook een sterk persoon.</p>
         </div>
       </div>
     </section>
 
-    <section class="beat" id="top-station" data-node="diamond">
-      <div class="beat__grid">
+    <!-- MOMENT 4: the two tracks merge, cross a line, arrive at the terminus (right) -->
+    <div class="divider anim" aria-hidden="true">
+      <svg viewBox="0 0 1200 240" preserveAspectRatio="none">
+        <path class="ln draw" pathLength="1" style="stroke:var(--G)" d="M 250 -20 L 250 90 L 330 130 L 980 130 L 1060 90 L 1060 -20"/>
+        <path class="ln draw" pathLength="1" style="stroke:var(--F)" d="M 750 -20 L 750 60 L 830 100 L 1090 100"/>
+        <path class="train" pathLength="1" d="M 250 -20 L 250 90 L 330 130 L 980 130 L 1060 90 L 1060 -20"/>
+        <circle class="stn" cx="620" cy="130" r="15"/>
+      </svg>
+    </div>
+
+    <section class="beat anim" id="s3">
+      <svg class="m-drop" viewBox="0 0 200 1000" preserveAspectRatio="none" aria-hidden="true" style="left:auto;right:0">
+        <path class="ln draw" pathLength="1" style="stroke:var(--F)" d="M 130 -10 L 130 380 L 80 430 L 80 1010"/>
+        <path class="train" pathLength="1" d="M 130 -10 L 130 380 L 80 430 L 80 1010"/>
+        <rect class="stn" x="70" y="500" width="26" height="26" rx="3" transform="rotate(45 83 513)"/>
+      </svg>
+      <div class="beat__in">
         <div class="media reveal d1">
           <img loading="lazy" alt="Wedstrijdteam van Hypnosis op het EK in Zweden"
             src="https://d1ngj59m25pphk.cloudfront.net/eyJidWNrZXQiOiAiaGRhYy1idWNrZXQiLCAia2V5IjogImdhbGxlcnkvdGVhbS1mZWxpY2l0eS1FSy16d2VkZW4tMjAyNC5qcGVnIiwgImVkaXRzIjogeyJqcGVnIjogeyJxdWFsaXR5IjogODV9LCAicmVzaXplIjogeyJ3aWR0aCI6IDEyMDAsICJmaXQiOiAiaW5zaWRlIn0sICJzaGFycGVuIjogdHJ1ZX19">
@@ -252,7 +280,7 @@
     </section>
   </div>
 
-  <section class="close" id="close">
+  <section class="close">
     <h2>Stap op.</h2>
     <p>Seizoen 2026 / 2027 &middot; gratis proefweek 7 tot 12 september.</p>
     <a class="btn" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></a>
@@ -263,8 +291,7 @@
   <p class="info"><strong>Seizoen 2026 / 2027</strong> <span>&middot; gratis proefweek 7 tot 12 september</span></p>
   <a class="btn" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></a>
 </div>
-
-<div class="tag-corner">Concept G &middot; the line as design language</div>
+<div class="tag-corner">Concept G &middot; the line, used creatively</div>
 
 <script>
 (() => {
@@ -273,98 +300,24 @@
   const bar = document.getElementById('actionbar');
   const heroImg = document.getElementById('heroImg');
   const hero = document.querySelector('.hero');
-  const journey = document.getElementById('journey');
-  const svg = document.getElementById('spine');
-  const track = document.getElementById('track');
-  const nodesG = document.getElementById('nodes');
-  const train = document.getElementById('train');
-  const trainB = document.getElementById('trainB');
-  const beats = [...journey.querySelectorAll('.beat')];
-  const railPx = () => Math.min(92, Math.max(30, window.innerWidth * 0.06));
-
-  let trackLen = 0, nodePts = [], pathEl = track;
-
-  function buildLine(){
-    const jw = journey.offsetWidth, jh = journey.offsetHeight;
-    svg.setAttribute('viewBox', `0 0 ${jw} ${jh}`);
-    svg.setAttribute('width', jw); svg.setAttribute('height', jh);
-    const x = railPx();
-    const jog = Math.min(52, x * 0.7);
-    const platY = Math.max(34, jh * 0.018);
-    const platRight = Math.min(jw * 0.52, x + 360);
-    // start with the platform (top), corner down, then thread the stations
-    let d = `M ${platRight} ${platY} L ${x} ${platY}`;
-    nodePts = [{x: x + 90, y: platY, type:'circle', plat:true},
-               {x: x + 230, y: platY, type:'diamond', plat:true}];
-    beats.forEach((b, i) => {
-      const y = b.offsetTop + Math.min(b.offsetHeight * 0.4, 320);
-      const dir = i % 2 === 0 ? 1 : -1;
-      const jx = x + jog * dir;
-      d += ` L ${x} ${y - 76} L ${jx} ${y - 26} L ${jx} ${y + 26} L ${x} ${y + 76}`;
-      nodePts.push({x: jx, y, type: b.dataset.node});
-    });
-    d += ` L ${x} ${jh}`;
-    track.setAttribute('d', d);
-    trackLen = track.getTotalLength();
-    track.style.strokeDasharray = trackLen;
-    nodesG.innerHTML = '';
-    nodePts.forEach((p, i) => {
-      let el;
-      if (p.type === 'diamond'){
-        el = document.createElementNS('http://www.w3.org/2000/svg','rect');
-        const s = p.plat ? 22 : 30; el.setAttribute('x', p.x - s/2); el.setAttribute('y', p.y - s/2);
-        el.setAttribute('width', s); el.setAttribute('height', s); el.setAttribute('transform', `rotate(45 ${p.x} ${p.y})`);
-      } else {
-        el = document.createElementNS('http://www.w3.org/2000/svg','circle');
-        el.setAttribute('cx', p.x); el.setAttribute('cy', p.y); el.setAttribute('r', p.plat ? 13 : 18);
-      }
-      el.setAttribute('class','station-node'); el.dataset.i = i;
-      if (p.plat){ el.classList.add('in'); }   // platform stops always shown
-      nodesG.appendChild(el);
-    });
-    update();
-  }
-
-  function update(){
-    const y = window.scrollY;
-    nav.classList.toggle('solid', y > 40);
-    bar.classList.toggle('show', y > hero.offsetHeight * 0.6);
-    if (!reduce && heroImg && y < hero.offsetHeight) heroImg.style.transform = `translateY(${y*0.18}px)`;
-    const jTop = journey.offsetTop;
-    const start = jTop - window.innerHeight * 0.92;
-    const end = jTop + journey.offsetHeight - window.innerHeight * 0.5;
-    const prog = reduce ? 1 : Math.max(0, Math.min(1, (y - start) / (end - start)));
-    track.style.strokeDashoffset = trackLen * (1 - prog);
-    const drawnY = jTop + (prog * (end - start)) + window.innerHeight * 0.5 - (jTop - start);
-    nodePts.forEach((p, i) => {
-      const node = nodesG.querySelector(`[data-i="${i}"]`);
-      if (node && (reduce || p.plat || (jTop + p.y) <= (start + (end-start)*prog + window.innerHeight*0.55))) node.classList.add('in');
-    });
-  }
-
-  // the train rides the line, continuously
-  let raf;
-  function ride(t){
-    if (!trackLen){ raf = requestAnimationFrame(ride); return; }
-    const period = 9000, lead = (t % period) / period;
-    const p1 = track.getPointAtLength(lead * trackLen);
-    const p2 = track.getPointAtLength(Math.max(0, lead - 0.02) * trackLen);
-    train.setAttribute('cx', p1.x); train.setAttribute('cy', p1.y);
-    trainB.setAttribute('cx', p2.x); trainB.setAttribute('cy', p2.y);
-    raf = requestAnimationFrame(ride);
-  }
 
   if (!reduce){
-    const io = new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.16});
-    document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
-  } else { document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in')); }
+    const io = new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');}}),{threshold:.22});
+    document.querySelectorAll('.anim, .reveal').forEach(el=>io.observe(el));
+  } else {
+    document.querySelectorAll('.anim, .reveal').forEach(el=>el.classList.add('in'));
+  }
 
   let ticking=false;
-  window.addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(()=>{update();ticking=false;});ticking=true;}},{passive:true});
-  let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(buildLine,150);});
-  window.addEventListener('load', buildLine);
-  buildLine();
-  if (!reduce) raf = requestAnimationFrame(ride);
+  function onScroll(){
+    const y=window.scrollY;
+    nav.classList.toggle('solid', y>40);
+    bar.classList.toggle('show', y>hero.offsetHeight*0.6);
+    if(!reduce && y<hero.offsetHeight) heroImg.style.transform=`translateY(${y*0.18}px)`;
+    ticking=false;
+  }
+  window.addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(onScroll);ticking=true;}},{passive:true});
+  onScroll();
 })();
 </script>
 </body>
