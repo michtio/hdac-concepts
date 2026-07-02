@@ -1,12 +1,11 @@
 <!doctype html>
 <!--
-  Hypnosis Dance Academy - Concept G (hand-built, v3)
-  The line is the design language, used CREATIVELY as you scroll:
-  vertical spine, then a horizontal divider with a crossing line,
-  then it FORKS into two tracks (Local/Fun + Express/Challenge),
-  then a crossing before the terminus. Each beat a different line-moment.
-  Native scroll, no libraries. pathLength-normalised CSS draws + CSS trains.
-  Real media. Copy mixes English + Flemish Dutch. No em dashes.
+  Hypnosis Dance Academy - Concept G (hand-built, v4)
+  The line as choreography: it varies as you scroll (vertical spine, horizontal
+  divider + crossing, the dense NETWORK map as centrepiece, a FORK into
+  Local/Express tracks, merge + cross into the terminus). Each beat a different
+  line-moment. Native scroll, no libraries. pathLength=1 CSS draws + CSS trains.
+  Real media. English + Flemish Dutch. No em dashes.
 -->
 <html lang="nl">
 <head>
@@ -44,8 +43,7 @@
   .navlinks{display:flex;align-items:center;gap:2rem;font-size:.86rem;font-weight:500}
   .navlinks a{opacity:.82;transition:opacity .2s}.navlinks a:hover{opacity:1}.navlinks .cta{opacity:1}
   .btn{display:inline-flex;align-items:center;gap:.75rem;background:var(--U);color:#000;font-weight:700;text-transform:uppercase;letter-spacing:.02em;font-size:.9rem;padding:1rem 1.6rem;border-radius:2px;transition:transform .25s var(--ease-out)}
-  .btn:hover{transform:translateY(-2px)}
-  .btn:hover .arrow{animation:subway .85s var(--ease-train)}
+  .btn:hover{transform:translateY(-2px)}.btn:hover .arrow{animation:subway .85s var(--ease-train)}
   .btn.sm{padding:.6rem 1rem;font-size:.78rem}
   :focus-visible{outline:3px solid var(--U);outline-offset:3px}
   @media(max-width:760px){.navlinks a:not(.cta){display:none}}
@@ -53,7 +51,6 @@
   .flow{background:linear-gradient(100deg,#ffe37a,#fbbf3b 30%,#f0851f 50%,#fbbf3b 70%,#ffe37a);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flowk 7s linear infinite}
   @keyframes flowk{to{background-position:220% center}}
 
-  /* hero */
   .hero{position:relative;height:100svh;min-height:600px;overflow:hidden;display:flex;align-items:flex-end}
   .hero__media{position:absolute;inset:0;z-index:0;overflow:hidden}
   .hero__media img{width:100%;height:112%;object-fit:cover;object-position:50% 26%;will-change:transform}
@@ -68,22 +65,23 @@
   .textlink .play{width:2.2rem;height:2.2rem;border:1.5px solid rgba(255,255,255,.5);border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
   .textlink .play svg{width:.72rem;height:.72rem;fill:#fff;margin-left:2px}
 
-  /* shared line primitives (pathLength=1) */
+  /* line primitives (pathLength=1) */
   .draw{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.3s var(--ease-out)}
-  .in .draw,.draw.in{stroke-dashoffset:0}
+  .in .draw{stroke-dashoffset:0}
   .ln{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:14}
+  .ln.thin{stroke-width:11}
   .train{fill:none;stroke:#fff;stroke-linecap:round;stroke-width:8;stroke-dasharray:.035 .965;stroke-dashoffset:1;opacity:0}
   .in .train{opacity:.95;animation:ride 6s linear infinite}
   @keyframes ride{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
   .stn{fill:var(--ink);stroke:#fff;stroke-width:5;opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.4);transition:opacity .5s var(--ease-out) .3s,transform .5s var(--ease-out) .3s}
   .in .stn{opacity:1;transform:scale(1)}
-  .cap{fill:#fff;opacity:0;transition:opacity .5s var(--ease-out) .4s}
-  .in .cap{opacity:1}
 
   .journey{position:relative;background:var(--ink)}
   .beat{position:relative;min-height:88svh;display:flex;align-items:center;padding:clamp(3.5rem,7vw,7rem) var(--pad)}
   .beat__in{width:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(2.5rem,5vw,5.5rem);align-items:center}
   @media(max-width:860px){.beat__in{grid-template-columns:1fr}}
+  .s-left .beat__in{padding-left:clamp(2rem,6vw,5rem)}
+  .m-drop{position:absolute;left:0;top:0;width:clamp(90px,14vw,220px);height:100%;z-index:0;pointer-events:none}
 
   .plate{display:inline-flex;align-items:center;gap:.7rem;background:#000;border-top:2px solid rgba(255,255,255,.92);border-radius:0 0 7px 7px;padding:.6rem 1rem;margin-bottom:1.6rem;text-transform:uppercase;letter-spacing:.1em;font-size:.78rem;font-weight:700;color:#fff}
   .plate .bullet{font-size:.5rem}.plate .arrowbox{height:.8em;color:#fff;margin-left:.2rem}
@@ -98,29 +96,46 @@
   .media .tag{position:absolute;left:0;bottom:1rem;z-index:2;display:inline-flex;align-items:center;gap:.5rem;background:#000;border-top:2px solid rgba(255,255,255,.9);padding:.5rem .85rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:#fff}
   .media .tag .bullet{font-size:.5rem}
 
-  /* line-moment: vertical spine drop into S1 (left) */
-  .m-drop{position:absolute;left:0;top:0;width:clamp(90px,14vw,220px);height:100%;z-index:0;pointer-events:none}
-  .s-left .beat__in{padding-left:clamp(2rem,6vw,5rem)}
-
-  /* line-moment: horizontal divider with a crossing line */
+  /* horizontal divider with a crossing */
   .divider{position:relative;height:clamp(150px,20vw,240px);width:100%;z-index:1}
   .divider svg{position:absolute;inset:0;width:100%;height:100%}
-  .dlabel{position:absolute;left:50%;top:50%;transform:translate(-50%,-160%);z-index:2;background:#000;border-top:2px solid #fff;border-radius:0 0 6px 6px;padding:.4rem .8rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#fff;display:inline-flex;align-items:center;gap:.5rem;white-space:nowrap;opacity:0;transition:opacity .5s .5s}
-  .in .dlabel{opacity:1}
-  .dlabel .bullet{font-size:.45rem}
+  .dlabel{position:absolute;left:50%;top:50%;transform:translate(-50%,-165%);z-index:2;background:#000;border-top:2px solid #fff;border-radius:0 0 6px 6px;padding:.4rem .8rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#fff;display:inline-flex;align-items:center;gap:.5rem;white-space:nowrap;opacity:0;transition:opacity .5s .5s}
+  .in .dlabel{opacity:1}.dlabel .bullet{font-size:.45rem}
 
-  /* line-moment: FORK into two tracks (Fun local / Challenge express) */
-  .fork{position:relative;padding:clamp(3rem,6vw,6rem) var(--pad)}
+  /* NETWORK centrepiece */
+  .netwerk{position:relative;z-index:2;padding:clamp(3rem,6vw,6rem) var(--pad) clamp(3.5rem,7vw,7rem);background:radial-gradient(120% 120% at 30% 10%,#141417,#0a0a0b 72%)}
+  .netwerk__head{max-width:1240px;margin:0 auto 2rem;display:flex;justify-content:space-between;align-items:flex-end;gap:2rem;flex-wrap:wrap}
+  .netwerk h2{font-weight:700;text-transform:uppercase;letter-spacing:-.035em;line-height:.9;font-size:clamp(2.4rem,5.6vw,5rem)}
+  .netwerk .sub{color:#b9b9b6;font-size:clamp(1rem,1.4vw,1.2rem);margin-top:.7rem;max-width:44ch}
+  .netwerk .legend{display:flex;gap:1.2rem;flex-wrap:wrap;font-size:.78rem;color:#cfcfcc}
+  .netwerk .legend .it{display:inline-flex;align-items:center;gap:.5rem}
+  .netwerk .legend .dot{width:14px;height:14px;border-radius:50%;background:var(--ink);border:3px solid #fff}
+  .netwerk .legend .dot.d{border-radius:2px;transform:rotate(45deg)}
+  .netwerk .legend .dot.ix{width:24px;height:14px;border-radius:7px;background:#fff;border:none}
+  .mapwrap{max-width:1240px;margin:0 auto;border-radius:6px;overflow:hidden}
+  svg.map{display:block;width:100%;height:auto}
+  .map .blt{stroke:none}
+  .map .ix{fill:#fff}
+  .map .lbl{fill:#fff;font-weight:700;font-size:15px}
+  .map .lbl.sm{fill:#c7c7c4;font-weight:500;font-size:12.5px;text-transform:uppercase;letter-spacing:.08em}
+  .map .bltxt{fill:#fff;font-weight:600;font-size:15px;text-anchor:middle;dominant-baseline:central}
+  .map .bltxt.dk{fill:#000}
+
+  /* FORK: headline clean on top, tracks framed below */
+  .fork{position:relative;padding:clamp(3rem,6vw,5rem) var(--pad) clamp(4rem,8vw,7rem)}
+  .fork__head{position:relative;z-index:2;text-align:center;max-width:760px;margin:0 auto clamp(2rem,4vw,3.2rem)}
+  .fork__head h2{font-weight:700;text-transform:uppercase;letter-spacing:-.03em;font-size:clamp(2.2rem,5vw,4.4rem);line-height:.95}
+  .fork__body{position:relative;max-width:1060px;margin:0 auto}
   .fork__svg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
-  .fork__in{position:relative;z-index:1;max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4rem)}
+  .fork__in{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:clamp(3rem,8vw,7rem);padding:clamp(2rem,4vw,3rem) 0}
   @media(max-width:760px){.fork__in{grid-template-columns:1fr;gap:3rem}}
-  .track{padding-top:1rem}
+  .track{padding:0 clamp(1rem,3vw,2.5rem)}
+  .fork__in .track:first-child{padding-left:clamp(3.5rem,7vw,7rem);padding-right:1rem}
+  .fork__in .track:last-child{padding-right:clamp(3.5rem,7vw,7rem);padding-left:1rem}
+  @media(max-width:760px){.fork__in .track:first-child,.fork__in .track:last-child{padding-left:2.5rem;padding-right:1rem}}
   .track .badge{display:inline-flex;align-items:center;gap:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.9rem;margin-bottom:1rem}
   .track h3{font-size:clamp(1.4rem,2.4vw,2.1rem);text-transform:uppercase;letter-spacing:-.02em;margin-bottom:.6rem}
-  .track p{font-size:1.04rem;color:#bcbcb9;max-width:42ch}
-  .fork__head{position:relative;z-index:1;text-align:center;max-width:760px;margin:0 auto clamp(2.5rem,5vw,4rem)}
-  .fork__head .plate{margin-bottom:1.2rem}
-  .fork__head h2{font-weight:700;text-transform:uppercase;letter-spacing:-.03em;font-size:clamp(2.2rem,5vw,4.4rem);line-height:.95}
+  .track p{font-size:1.04rem;color:#bcbcb9}
 
   .close{position:relative;z-index:2;text-align:center;padding:clamp(4.5rem,11vw,10rem) var(--pad);background:var(--U);color:#000}
   .close h2{font-weight:700;text-transform:uppercase;letter-spacing:-.03em;line-height:.9;font-size:clamp(2.8rem,7.5vw,7rem);margin-bottom:1.4rem}
@@ -141,9 +156,8 @@
   @media (prefers-reduced-motion: reduce){
     .reveal{opacity:1;transform:none;transition:none}
     .draw{stroke-dashoffset:0;transition:none}
-    .train{display:none}.stn{opacity:1;transform:none}.cap,.dlabel{opacity:1}
-    .btn:hover .arrow{animation:none}.flow{animation:none}
-    .hero__media img{height:100%}
+    .train{display:none}.stn{opacity:1;transform:none}.dlabel{opacity:1}
+    .btn:hover .arrow{animation:none}.flow{animation:none}.hero__media img{height:100%}
   }
 </style>
 </head>
@@ -156,7 +170,7 @@
 <header class="nav" id="nav">
   <a class="wordmark" href="#top"><span class="bullet" style="background:var(--U);color:#000">H</span> Hypnosis</a>
   <nav class="navlinks">
-    <a href="#">Lessen</a><a href="#">Wedstrijd</a><a href="#s1">BASECAMP</a>
+    <a href="#netwerk">Lessen</a><a href="#s3">Wedstrijd</a><a href="#s1">BASECAMP</a>
     <a class="cta btn sm" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></a>
   </nav>
 </header>
@@ -179,7 +193,7 @@
 
   <div class="journey">
 
-    <!-- MOMENT 1: vertical spine drops into station 1 (left) -->
+    <!-- MOMENT 1: vertical spine into Home -->
     <section class="beat s-left anim" id="s1">
       <svg class="m-drop" viewBox="0 0 200 1000" preserveAspectRatio="none" aria-hidden="true">
         <path class="ln draw" pathLength="1" style="stroke:var(--U)" d="M 60 -10 L 60 300 L 110 350 L 110 430"/>
@@ -202,59 +216,117 @@
       </div>
     </section>
 
-    <!-- MOMENT 2: the line turns HORIZONTAL as a divider, a second line CROSSES it -->
+    <!-- MOMENT 2: horizontal divider + crossing, into the network -->
     <div class="divider anim" aria-hidden="true">
       <svg viewBox="0 0 1200 240" preserveAspectRatio="none">
-        <!-- the spine comes from the left, runs across, exits right -->
         <path class="ln draw" pathLength="1" style="stroke:var(--D)" d="M 110 -20 L 110 80 L 170 120 L 1200 120"/>
-        <!-- a crossing line sweeps through -->
-        <path class="ln draw" pathLength="1" style="stroke:var(--Mu);stroke-width:10" d="M 470 250 L 620 60 L 900 60"/>
+        <path class="ln thin draw" pathLength="1" style="stroke:var(--Mu)" d="M 470 250 L 620 60 L 900 60"/>
         <path class="train" pathLength="1" d="M 110 -20 L 110 80 L 170 120 L 1200 120"/>
-        <rect class="cap" x="600" y="100" width="80" height="40" rx="20"/>
-        <circle class="stn" cx="900" cy="120" r="15"/>
         <rect class="stn" x="611" y="51" width="18" height="18" rx="2" transform="rotate(45 620 60)"/>
       </svg>
-      <span class="dlabel"><span class="bullet" style="background:var(--Mu)">&#9670;</span> Overstap &middot; kies je richting</span>
+      <span class="dlabel"><span class="bullet" style="background:var(--Mu)">&#9670;</span> Overstap &middot; verken het netwerk</span>
     </div>
 
-    <!-- MOMENT 3: the line FORKS into two tracks: Fun (Local) and Challenge (Express) -->
+    <!-- MOMENT 3: THE NETWORK centrepiece (living map) -->
+    <section class="netwerk anim" id="netwerk">
+      <div class="netwerk__head">
+        <div>
+          <p class="plate reveal"><span class="bullet" style="background:var(--C)">N</span> Vind jouw lijn <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></p>
+          <h2 class="reveal">Het netwerk</h2>
+          <p class="sub reveal d1">Elke dansstijl is een lijn, elke les een halte. Jouw groei is een route van kleuter tot wereldtop.</p>
+        </div>
+        <div class="legend reveal d2">
+          <span class="it"><span class="dot"></span> Local &middot; Fun</span>
+          <span class="it"><span class="dot d"></span> Express &middot; Challenge</span>
+          <span class="it"><span class="dot ix"></span> Overstap</span>
+        </div>
+      </div>
+      <div class="mapwrap">
+        <svg class="map" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Het Hypnosis netwerk als metrokaart">
+          <g class="lines">
+            <path class="ln draw" pathLength="1" style="stroke:var(--J)" d="M 120 170 L 430 170 L 520 260 L 520 620 L 610 710 L 1010 710"/>
+            <path class="ln draw" pathLength="1" style="stroke:var(--U)" d="M 140 300 L 610 300 L 700 390 L 1000 390 L 1090 300 L 1320 300"/>
+            <path class="ln draw" pathLength="1" style="stroke:var(--M)" d="M 120 470 L 560 470 L 650 560 L 1120 560 L 1210 470 L 1330 470"/>
+            <path class="ln draw" pathLength="1" style="stroke:var(--D)" d="M 250 730 L 250 470 L 360 360 L 940 360 L 1030 270 L 1030 110"/>
+            <path class="ln draw" pathLength="1" style="stroke:var(--F)" d="M 1330 140 L 880 140 L 800 220 L 800 470 L 720 550 L 380 550"/>
+          </g>
+          <g class="trains">
+            <path class="train" pathLength="1" d="M 120 170 L 430 170 L 520 260 L 520 620 L 610 710 L 1010 710"/>
+            <path class="train" pathLength="1" d="M 140 300 L 610 300 L 700 390 L 1000 390 L 1090 300 L 1320 300"/>
+            <path class="train" pathLength="1" d="M 120 470 L 560 470 L 650 560 L 1120 560 L 1210 470 L 1330 470"/>
+            <path class="train" pathLength="1" d="M 250 730 L 250 470 L 360 360 L 940 360 L 1030 270 L 1030 110"/>
+            <path class="train" pathLength="1" d="M 1330 140 L 880 140 L 800 220 L 800 470 L 720 550 L 380 550"/>
+          </g>
+          <g class="interchanges">
+            <rect class="ix" x="500" y="282" width="40" height="120" rx="20"/>
+            <rect class="ix" x="630" y="342" width="120" height="40" rx="20"/>
+            <rect class="ix" x="780" y="450" width="40" height="120" rx="20"/>
+          </g>
+          <g class="stations">
+            <circle class="stn" cx="430" cy="170" r="9"/><circle class="stn" cx="820" cy="710" r="9"/>
+            <circle class="stn" cx="380" cy="300" r="9"/><circle class="stn" cx="850" cy="390" r="9"/><circle class="stn" cx="1200" cy="300" r="9"/>
+            <circle class="stn" cx="360" cy="470" r="9"/><circle class="stn" cx="900" cy="560" r="9"/><circle class="stn" cx="1270" cy="470" r="9"/>
+            <circle class="stn" cx="250" cy="600" r="9"/><circle class="stn" cx="1030" cy="180" r="9"/>
+            <rect class="stn" x="1091" y="131" width="18" height="18" rx="2" transform="rotate(45 1100 140)"/>
+            <rect class="stn" x="791" y="331" width="18" height="18" rx="2" transform="rotate(45 800 340)"/>
+            <rect class="stn" x="551" y="541" width="18" height="18" rx="2" transform="rotate(45 560 550)"/>
+          </g>
+          <g class="labels">
+            <text class="lbl" x="690" y="330" text-anchor="middle">BASECAMP</text>
+            <circle class="blt" cx="120" cy="170" r="17" style="fill:var(--J)"/><text class="bltxt" x="120" y="170">J</text><text class="lbl sm" x="120" y="140" text-anchor="middle">Jazz</text>
+            <circle class="blt" cx="140" cy="300" r="17" style="fill:var(--U)"/><text class="bltxt dk" x="140" y="300">U</text><text class="lbl sm" x="140" y="270" text-anchor="middle">Urban</text>
+            <circle class="blt" cx="120" cy="470" r="17" style="fill:var(--M)"/><text class="bltxt" x="120" y="470">M</text><text class="lbl sm" x="120" y="440" text-anchor="middle">Modern</text>
+            <circle class="blt" cx="250" cy="730" r="17" style="fill:var(--D)"/><text class="bltxt" x="250" y="730">D</text><text class="lbl sm" x="250" y="762" text-anchor="middle">Disco</text>
+            <circle class="blt" cx="1030" cy="110" r="17" style="fill:var(--D)"/><text class="bltxt" x="1030" y="110">D</text>
+            <circle class="blt" cx="1320" cy="300" r="17" style="fill:var(--U)"/><text class="bltxt dk" x="1320" y="300">U</text>
+            <circle class="blt" cx="1330" cy="470" r="17" style="fill:var(--M)"/><text class="bltxt" x="1330" y="470">M</text>
+            <circle class="blt" cx="1330" cy="140" r="17" style="fill:var(--F)"/><text class="bltxt" x="1330" y="140">F</text><text class="lbl sm" x="1330" y="110" text-anchor="middle">Fitness</text>
+            <circle class="blt" cx="380" cy="550" r="17" style="fill:var(--F)"/><text class="bltxt" x="380" y="550">F</text>
+            <circle class="blt" cx="1010" cy="710" r="17" style="fill:var(--J)"/><text class="bltxt" x="1010" y="710">J</text>
+            <text class="lbl sm" x="820" y="742" text-anchor="middle">Kleuter</text>
+            <text class="lbl sm" x="1270" y="502" text-anchor="middle">Wereldtop</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- MOMENT 4: FORK into Local + Express -->
     <section class="fork anim" id="s2">
-      <svg class="fork__svg" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true">
-        <!-- incoming, then fork -->
-        <path class="ln draw" pathLength="1" style="stroke:#8a8a88;stroke-width:10" d="M 500 -20 L 500 120"/>
-        <path class="ln draw" pathLength="1" style="stroke:var(--G)" d="M 500 120 L 250 240 L 250 620"/>
-        <path class="ln draw" pathLength="1" style="stroke:var(--F)" d="M 500 120 L 750 240 L 750 620"/>
-        <!-- local stops (circles) -->
-        <circle class="stn" cx="250" cy="330" r="14"/><circle class="stn" cx="250" cy="470" r="14"/><circle class="stn" cx="250" cy="600" r="14"/>
-        <!-- express stops (diamonds) -->
-        <rect class="stn" x="741" y="351" width="20" height="20" rx="2" transform="rotate(45 751 361)"/>
-        <rect class="stn" x="741" y="571" width="20" height="20" rx="2" transform="rotate(45 751 581)"/>
-      </svg>
       <div class="fork__head">
         <p class="plate reveal"><span class="bullet" style="background:var(--U);color:#000">2</span> Fun of Challenge <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></p>
         <h2 class="reveal d1">Jij kiest je tempo.</h2>
       </div>
-      <div class="fork__in">
-        <div class="track reveal d1">
-          <span class="badge" style="color:var(--G)"><span class="bullet" style="background:var(--G)">L</span> Local &middot; Fun</span>
-          <h3>Elke halte, puur voor de goesting</h3>
-          <p>Dansen, vrienden maken, jezelf zijn. De local stopt overal en heeft geen haast. Niet iedereen moet op een podium staan om een echte danser te zijn.</p>
-        </div>
-        <div class="track reveal d2">
-          <span class="badge" style="color:var(--F)"><span class="bullet" style="background:var(--F)">E</span> Express &middot; Challenge</span>
-          <h3>Minder haltes, verder sporen</h3>
-          <p>Techniek, ambitie, podium. De express rijdt door tot aan de wereldtop. Hier groeit niet alleen een sterke danser, maar ook een sterk persoon.</p>
+      <div class="fork__body">
+        <svg class="fork__svg" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+          <path class="ln draw" pathLength="1" style="stroke:#8a8a88;stroke-width:10" d="M 500 -20 L 500 70"/>
+          <path class="ln draw" pathLength="1" style="stroke:var(--G)" d="M 500 70 L 120 170 L 60 230 L 60 640"/>
+          <path class="ln draw" pathLength="1" style="stroke:var(--F)" d="M 500 70 L 880 170 L 940 230 L 940 640"/>
+          <circle class="stn" cx="60" cy="330" r="13"/><circle class="stn" cx="60" cy="470" r="13"/><circle class="stn" cx="60" cy="600" r="13"/>
+          <rect class="stn" x="930" y="351" width="20" height="20" rx="2" transform="rotate(45 940 361)"/>
+          <rect class="stn" x="930" y="571" width="20" height="20" rx="2" transform="rotate(45 940 581)"/>
+        </svg>
+        <div class="fork__in">
+          <div class="track reveal d1">
+            <span class="badge" style="color:var(--G)"><span class="bullet" style="background:var(--G)">L</span> Local &middot; Fun</span>
+            <h3>Elke halte, puur voor de goesting</h3>
+            <p>Dansen, vrienden maken, jezelf zijn. De local stopt overal en heeft geen haast. Niet iedereen moet op een podium staan om een echte danser te zijn.</p>
+          </div>
+          <div class="track reveal d2">
+            <span class="badge" style="color:var(--F)"><span class="bullet" style="background:var(--F)">E</span> Express &middot; Challenge</span>
+            <h3>Minder haltes, verder sporen</h3>
+            <p>Techniek, ambitie, podium. De express rijdt door tot aan de wereldtop. Hier groeit niet alleen een sterke danser, maar ook een sterk persoon.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- MOMENT 4: the two tracks merge, cross a line, arrive at the terminus (right) -->
+    <!-- MOMENT 5: merge + cross into terminus -->
     <div class="divider anim" aria-hidden="true">
       <svg viewBox="0 0 1200 240" preserveAspectRatio="none">
-        <path class="ln draw" pathLength="1" style="stroke:var(--G)" d="M 250 -20 L 250 90 L 330 130 L 980 130 L 1060 90 L 1060 -20"/>
-        <path class="ln draw" pathLength="1" style="stroke:var(--F)" d="M 750 -20 L 750 60 L 830 100 L 1090 100"/>
-        <path class="train" pathLength="1" d="M 250 -20 L 250 90 L 330 130 L 980 130 L 1060 90 L 1060 -20"/>
-        <circle class="stn" cx="620" cy="130" r="15"/>
+        <path class="ln draw" pathLength="1" style="stroke:var(--G)" d="M 60 -20 L 60 90 L 140 130 L 980 130 L 1060 90 L 1060 -20"/>
+        <path class="ln thin draw" pathLength="1" style="stroke:var(--F)" d="M 940 -20 L 940 60 L 1020 100 L 1200 100"/>
+        <path class="train" pathLength="1" d="M 60 -20 L 60 90 L 140 130 L 980 130 L 1060 90 L 1060 -20"/>
+        <circle class="stn" cx="560" cy="130" r="15"/>
       </svg>
     </div>
 
@@ -291,7 +363,7 @@
   <p class="info"><strong>Seizoen 2026 / 2027</strong> <span>&middot; gratis proefweek 7 tot 12 september</span></p>
   <a class="btn" href="https://app.ledenbeheer.be/hypnosis-dance-academy-vzw">Inschrijven <span class="arrowbox"><svg class="arrow"><use href="#hyp-arrow"/></svg></span></a>
 </div>
-<div class="tag-corner">Concept G &middot; the line, used creatively</div>
+<div class="tag-corner">Concept G &middot; the line as choreography</div>
 
 <script>
 (() => {
@@ -300,22 +372,12 @@
   const bar = document.getElementById('actionbar');
   const heroImg = document.getElementById('heroImg');
   const hero = document.querySelector('.hero');
-
   if (!reduce){
-    const io = new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');}}),{threshold:.22});
+    const io = new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');}}),{threshold:.18});
     document.querySelectorAll('.anim, .reveal').forEach(el=>io.observe(el));
-  } else {
-    document.querySelectorAll('.anim, .reveal').forEach(el=>el.classList.add('in'));
-  }
-
+  } else { document.querySelectorAll('.anim, .reveal').forEach(el=>el.classList.add('in')); }
   let ticking=false;
-  function onScroll(){
-    const y=window.scrollY;
-    nav.classList.toggle('solid', y>40);
-    bar.classList.toggle('show', y>hero.offsetHeight*0.6);
-    if(!reduce && y<hero.offsetHeight) heroImg.style.transform=`translateY(${y*0.18}px)`;
-    ticking=false;
-  }
+  function onScroll(){const y=window.scrollY;nav.classList.toggle('solid',y>40);bar.classList.toggle('show',y>hero.offsetHeight*0.6);if(!reduce&&y<hero.offsetHeight)heroImg.style.transform=`translateY(${y*0.18}px)`;ticking=false;}
   window.addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(onScroll);ticking=true;}},{passive:true});
   onScroll();
 })();
